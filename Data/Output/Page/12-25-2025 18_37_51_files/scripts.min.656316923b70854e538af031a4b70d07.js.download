@@ -1,0 +1,1435 @@
+
+$('document').ready( function (e) {
+
+  ZipUtils.attach();
+
+});
+/*
+
+    Current issues
+ *1. First click doesn't work.
+     2. Domain mapping
+ *3.OOF flow 
+
+  How this works:
+    this is a driver for the use of the modals_util where
+        a) a queue of modal/actions are setup by the service code that is in the html selectors
+          .button[data-click] || button[external-link] || a[href^="#"] 
+
+        b) ZipUtils.inputFilter provides the configurations of each of these service codes
+
+        c) ZipUtils.apply adds correct initial modal/actions to be run for that service code
+        
+        d) ZipUtils.stepRedirectToApply determines if correct conditions are met for redirect to apply
+            or whether there is another modal that needs to be presented
+        
+        e) ZipUtils.services is meant to be simple reusable ajax where success and fail callbacks are passed in
+            .there is currently some hacks there that should be factored out an put back into the correct callback methods
+
+                example of how that method should be called is:
+
+                  ZipUtils.services({
+                      type: 'GET',
+                      url: url.replace('__zip__', zipcode),
+                      dataType: 'json',
+                      success: ZipUtils.stepEvaluateZipQuery,
+                      error: ZipUtils.stepServiceError
+                  });
+
+          f) ZipUtils.setModalContent sets up current / next modal
+                  Modals.reuse takes care of reusing an existing modal it:
+                    .slides current modal up
+                    .changes content / handlers
+                    .slides changed modal back down
+
+        
+
+          @TODO
+              ZipUtils.settings is called from ZipUtils.setModalContent
+                  current the object that is returned is directly consumed by modal.reuse
+
+                  we need to change this settings method to use a new ZipUtils.cloneTempate method
+                    .this will extract the template parts that are needed form DOM where they have
+                      correct lang translations applied from the server side
+                    .this method will hydrate the template parts that are bascically a div.style.display=none
+                      with dataset attribs for each settings object part {heading:string, body:HTML, firstButton:string....} so forth
+
+                      ZipUtils.cloneTemplate(string:id): settingsObject
+
+
+
+                #####################
+                
+                IN FOOTPRINT-
+                    -If ZIP code is in the list of zipcodes added manually in dialog
+                        OR
+                    -If State code from the Zipservice call is NOT in the list of OOF State list
+                
+                OUT OF FOOTPRINT-
+                    -If above both above conditions are false
+
+                    ... ZipUtils.getZip
+                      setups service call
+
+                      ZipUtils.services({
+                          type: 'GET',
+                          url: url.replace('__zip__', zipcode),
+                          dataType: 'json',
+                          success: ZipUtils.stepEvaluateZipQuery,
+                          error: ZipUtils.stepServiceError
+                      });
+
+                    ... ZipUtils.stepEvaluateZipQuery provides conditions for:
+                      call next modal(out of range message) || redirect 
+
+
+                ######################
+                Flow 
+                
+                General-
+                    In Footprint - Navigate to Apply
+                    Out of Footprint - Show second modal to confirm Existing Customer or Not
+                        If Yes - Navigate to Apply
+                        If No - Show We're sorry message 
+
+                Military-
+                    In Footprint - Show military modal
+                            If Yes - Navigate to Apply - Pass customerSegmentIndicator=MILITARY
+                            If No - Show Not eligible message
+
+                    Out of Footprint - Show second modal to confirm Existing Customer or Not
+                        If Yes - Navigate to Apply - Pass customerSegmentIndicator=MILITARY
+                        If No - Show We're sorry message 
+
+                Offers- TODO
+                    -Offer dialog is most likely not in use - can be removed after verification
+
+                Promo Apply - TODO
+                    -Pass promo parameter - need to check logic
+
+                Student-
+                    -Pass customerSegmentIndicator=STUDENT&referralCode=XXXX&segmentCode=YYYYY&campus=Y
+
+                Workplace-
+                    -General flow after validation of company code(need to check where the validation is happening)
+                    -Pass customerSegmentIndicator=WORKPLACE 
+
+                PDF- TODO
+                    - If Zipcode present
+                    - If Zipcode not present
+
+                EMP - Zipcode modal is not needed if domain is emp.usbank.com
+
+                JOINT ACCOUNTS - TODO
+                    - NEW
+ */
+
+
+var ZipUtils = ZipUtils || {};
+var queue = [];
+(function () {
+	"use strict";
+
+	ZipUtils = {
+		initialized: false,
+
+		current_code: null,
+
+		offer_code: null,
+
+		current_step: null,
+
+		entry_point: null,
+
+		asked: [],
+
+		workplace: false,
+
+		domain: function () {
+			if (ZipUtils.isProductionMode() && ZipUtils.isPublic()) {
+				return "https://apply.usbank.com";
+			}
+			return "https://uat2-apply.usbank.com";
+		},
+
+		offer: function () {
+			var dom_data = ZipUtils.dom_data();
+			var hasDomData = dom_data != null && typeof dom_data !== "undefined";
+			var hasOffer = hasDomData && dom_data.offer_check == "true";
+
+			var offerZips = [];
+			if (hasOffer) {
+				offerZips = dom_data.offer_zipcodes.split(",").map(function (_v) {
+					return _v.trim();
+				});
+			}
+			return {
+				hasOffer: dom_data !== null && dom_data.offer_check == "true",
+				offer_code: hasOffer && dom_data.offer_code,
+				zipcodes: offerZips,
+			};
+		},
+
+		// Handlers to go into global usbUtils after ECM migration is complete
+		// START
+
+		formElementFocus: function (e) {
+			var el = e.target;
+			var parent = el.closest(".fieldset:first-child");
+			if (parent && parent.nodeType == 1) {
+				parent.classList.add("active");
+				parent.classList.add("focused");
+			}
+			return false;
+		},
+		formElementState: function (e) {
+			var el = e.target;
+			if (el && el.nodeType == 1) {
+				var parent = el.closest(".fieldset:first-child");
+				var unchecked =
+					/(checkbox|radio)/.test(this.type) && this.checked == false;
+				parent.classList.remove("focused");
+				if (!el.value || unchecked) {
+					parent.classList.remove("active");
+				}
+			}
+			return false;
+		},
+		formElementKeyUp: function (e) {
+			var el = e.target;
+			var parent = el.closest(".fieldset:first-child");
+			if (parent && parent.nodeType == 1 && el) {
+				el.value = el.value.replace(/\D/g, "");
+			}
+			return false;
+		},
+
+		formKeyDown: function (e) {
+			if (e.keyCode == 13) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		},
+
+		formElementHandler: function () {
+			var inputs = usbUtils.nodeListArray(
+				modal.form.querySelectorAll("input, textarea, select")
+			);
+
+			for (var i in inputs) {
+				var el = inputs[i];
+				if (el.nodeType == 1 && !el.classList.contains("active-input")) {
+					var parent = el.closest(".fieldset:first-child");
+					el.classList.add("active-input");
+					ZipUtils.listenTo(el, "blur", ZipUtils.formElementState);
+					ZipUtils.listenTo(el, "change", ZipUtils.formElementState);
+					ZipUtils.listenTo(el, "focus", ZipUtils.formElementFocus);
+					ZipUtils.listenTo(el, "keyup", ZipUtils.formElementKeyUp);
+					ZipUtils.listenTo(el, "keydown", ZipUtils.formKeyDown);
+					if (el.value && el.value !== "") {
+						if (parent) parent.classList.add("active");
+					}
+				}
+			}
+		},
+
+		templateId: function () {
+			return ZipUtils.dom_data().template_id;
+		},
+
+		startCode: function () {
+			return ZipUtils.dom_data().link_code;
+		},
+
+		start_on_load: function () {
+			var display = ZipUtils.dom_data() && ZipUtils.dom_data().modalatstart;
+			return display == true || display == "true";
+		},
+
+		start_on_missing_zipcode: function () {
+			var cached = ZipUtils.dom_data() && ZipUtils.dom_data().modalpagerequireszipcode;
+			if (ZipUtils.getCookie('zipcode') !== '') return false;
+			return cached == true || cached == "true";
+		},
+
+		show_zipcode: function () {
+			var display = ZipUtils.dom_data().displayzip;
+			return display == true || display == "true";
+		},
+
+		listenTo: function (node, evt, handler) {
+			if (node.attachEvent) node.attachEvent("on" + evt, handler);
+			else node.addEventListener(evt, handler, false);
+		},
+
+		offer_zones: function () {
+			var offers = ZipUtils.dom_data().offer_tabs;
+			var state_codes = ZipUtils.dom_data().statecode;
+			if (offers) {
+				// recreate json from
+				var parse = null;
+				try {
+					parse = JSON.parse("[__]".replace("__", offers));
+				} catch (e) {}
+				if (parse) {
+					var filter = [];
+					parse.map(function (_z) {
+						if (_z.zipCodeKillSwitch == "" && _z.zipCodeValues)
+							filter.push(_z.zipCodeValues.replace(/,$|[\s]/g, ""));
+					});
+
+					// pattern: (zip|zip|zip) for regex
+					var zip_filter = "(" + filter.join(",").replace(/,/g, "|") + ")";
+
+					// pattern: (state|state|state) for regex
+					var state_filter =
+						"(" + state_codes.replace(/,$|[\s]/g, "").replace(/,/g, "|") + ")";
+					return {
+						exception_filter: zip_filter,
+						states_filter: state_filter,
+					};
+				}
+			}
+			return null;
+		},
+
+		dom_data: function () {
+			var dataspan = document.querySelector("#zip_data_container");
+			if (dataspan && dataspan.dataset) return dataspan.dataset;
+			return null;
+		},
+
+		dom_data_settings: function (selector) {
+			var dataspan = document.querySelector(
+				".settings_data_container " + selector
+			);
+			if (dataspan && dataspan.dataset) return dataspan.dataset;
+			return null;
+		},
+
+		isPublic: function () {
+			return /(www.usbank.com|emp.usbank.com)/.test(window.location.href);
+		},
+
+		isProductionMode: function () {
+			var not_uat = /(uat3.www|uat4.www)/.test(window.location.href) == false;
+			return (
+				not_uat &&
+				/(www.usbank.com|emp.usbank.com)/gi.test(window.location.href) == true
+			);
+		},
+
+		domain_type: function () {
+			var dev_root = window.location.href.match(
+				/(uat1|uat2|uat3|uat4|uat5|uat6|it1|it2|it3|it4|it5)/gi
+			);
+			return dev_root ? dev_root[0] : "it2";
+		},
+
+		isUAT: function () {
+			return /(uat3|uat4|uat5)/gi.test(window.location.href);
+		},
+
+		redirect_url: function () {
+			var flow = ZipUtils.current_def.flowtype;
+			var host = ZipUtils.hosts().apply;
+			var flow_uri = ZipUtils.current_def.url;
+			var zip = ZipUtils.getCookie("zipcode");
+			var redirect = flow_uri ? host.concat(flow_uri).replace('__zip__', zip) : null;
+			switch (flow) {
+				case "rate_table_location":
+					return flow_uri.concat("/&?" + zip);
+
+				case "pdf":
+					redirect = ZipUtils.getCookie("pdf_link");
+					break;
+
+				case "dda_military":
+					redirect = redirect.concat("&CUSTOMER_SEGMENT_INDICATOR=MILITARY");
+					break;
+
+				// case 'dda_student_military':
+				// redirect =
+				// redirect.concat('&CUSTOMER_SEGMENT_INDICATOR=MILITARY');
+
+				case "dda_student":
+					var studentIndicator = "&CUSTOMER_SEGMENT_INDICATOR=STUDENT";
+					var segmentParamter = "&SEGMENT_CODE=UV0003";
+					var referralParameter = "";
+					var campusParameter = "";
+					var dynamicSegmentCode = $("#campusSegmentCode").val();
+					var dynamicReferralCode = $("#campusReferralCode").val();
+
+					if (dynamicSegmentCode != null && dynamicSegmentCode !== "") {
+						segmentParamter = "&SEGMENT_CODE=" + dynamicSegmentCode;
+						campusParameter = "&CAMPUS=Y";
+					}
+					if (dynamicReferralCode != null && dynamicReferralCode !== "") {
+						referralParameter = "&REFERRAL_CODE=" + dynamicReferralCode;
+						campusParameter = "&CAMPUS=Y";
+					}
+					redirect =
+						redirect +
+						studentIndicator +
+						segmentParamter +
+						referralParameter +
+						campusParameter;
+
+					break;
+
+				default:
+					// offer_code is validated first as part of zip search
+					if (ZipUtils.offer_code)
+						redirect = redirect.concat("&PROMO_CODE=" + ZipUtils.offer_code);
+					// workplace indicator is detected as a class in the link
+					// attributes [found in attach method]
+					var segmentParamter = "";
+					if(document.cookie.indexOf('segment_code') > -1){
+						var segment_code = ZipUtils.getCookie("segment_code");
+						if(segment_code != null && segment_code !== "undefined"){
+							segmentParamter="&SEGMENT_CODE="+segment_code;
+						}
+					}
+					if (ZipUtils.workplace)
+						redirect = redirect.concat("&CUSTOMER_SEGMENT_INDICATOR=WORKPLC")+segmentParamter;
+			}
+			return redirect;
+		},
+
+		hosts: function () {
+			var apply = ZipUtils.isProductionMode()
+				? "https://apply.usbank.com"
+				: "https://uat2-apply.usbank.com";
+			var service = "https://__type__.usbank.com".replace(
+				"__type__",
+				ZipUtils.domain_type()
+			);
+			return {
+				apply: apply,
+				service: service,
+			};
+		},
+
+		uri: {
+			json: "/svt/usbank/zipcodemapping.ZipCode-__zip__.json",
+			xml: "/content/dam/usbank/documents/xml/region.xml",
+			pdf: "/content/dam/usbank/documents/pdf/regions/CPI__zip__.pdf",
+		},
+
+		context: {
+			mil: "&CUSTOMER_SEGMENT_INDICATOR=MILITARY",
+			workplace: "&CUSTOMER_SEGMENT_INDICATOR=WORKPLACE",
+		},
+
+		postage: {
+			type: "POST",
+			url: "/content/dam/usbank/documents/xml/region.xml",
+			dataType: "JSON",
+			success: null,
+			error: null,
+		},
+
+		inputFilter: {
+			// group 1 anchor href
+			"#ratetableCheck": {
+				// na
+				flowtype: "",
+				designation: "customer",
+			},
+			"#saveZip": {
+				// na
+				flowtype: "no_flow_type",
+				designation: "customer",
+			},
+			no_code_start: {
+				flowtype: "no_flow_type",
+				designation: "customer",
+				url: null,
+			},
+			"#applyNowChecking": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=GS",
+			},
+
+			"#applyOnlineModal": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: null,
+			},
+			// only one
+			"#openCPIPdfChecking": {
+				// not .. function call
+				flowtype: "pdf",
+				designation: "customer",
+
+				url: null,
+			},
+			"#applySmartlyCheckingMilitary": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&CUSTOMER_SEGMENT_INDICATOR=MILITARY",
+			},
+			"#applySmartlyChecking": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S",
+			},
+			"#applySmartlyChecking23WEB02": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23WEB02",
+			},
+			"#applySmartlyChecking2023JAN": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=2023JAN",
+			},
+			"#applySmartlyChecking2023MAR": {
+				flowtype: "dda_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=2023MAR",
+			},
+			"#applySmartlyChecking23WEB04": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23WEB04",
+			},
+
+			"#applySmartlyChecking23NBA04": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23NBA04",
+			},
+
+			"#applySmartlyChecking23DMP04": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23DMP04",
+			},
+
+			"#applySmartlyChecking23DMC05": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23DMC05",
+			},
+
+			"#applySmartlyChecking23WEB06": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&PROMO_CODE=23WEB06",
+			},
+			"#applySafeChecking": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=10",
+			},
+			"#applySafeCheckingMinor": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=10&ISMINOR=true",
+			},
+			"#applySmartlyCheckingMinor": {
+				flowtype: "dda_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=4S&ISMINOR=true",
+			},
+			"#applyPlatinumMilitary": {
+				flowtype: "dda_military",
+				designation: "military",
+
+				url: "/apply/apply.html?PRODUCT_CODE=DDA&SUB_PRODUCT_CODE=GS",
+			},
+			"#applyEliteSavings": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=86",
+			},
+			"#applyEliteSavings23WEB02": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=86&PROMO_CODE=23WEB02",
+			},
+			"#applyEliteSavings2023JAN": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=86&PROMO_CODE=2023JAN",
+			},
+			"#applyEliteSavings2023MAR": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=86&PROMO_CODE=2023MAR",
+			},
+			"#applyStandardSavings": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS",
+			},
+			"#applyStandardSavings23WEB02": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=23WEB02",
+			},
+			"#applyStandardSavings2023JAN": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=2023JAN",
+			},
+			"#applyStandardSavings23DMP04": {
+				flowtype: "sav_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=23DMP04",
+			},
+
+			"#applyStandardSavings23WEB04": {
+				flowtype: "sav_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=23WEB04",
+			},
+
+			"#applyStandardSavings23DMC05": {
+				flowtype: "sav_general",
+				designation: "customer",
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=23DMC05",
+			},
+			"#applyStandardSavings2023MAR": {
+				flowtype: "sav_general",
+				designation: "customer",
+
+				url: "/apply/apply.html?PRODUCT_CODE=SAV&SUB_PRODUCT_CODE=RS&PROMO_CODE=2023MAR",
+			},
+
+
+		},
+		/**
+			* ---------------------------------------- METHODS
+			*/
+		getRegion: function (callback) {
+			var url = ZipUtils.hosts().service;
+
+			return ZipUtils.services({
+				type: "GET",
+				url: url,
+				dataType: "XML",
+				success: function (data) {
+					if (typeof callback === "function") callback(data);
+				},
+			});
+		},
+
+		clearStore: function (key) {
+			if (key) {
+				ZipUtils.setCookie(key, ZipUtils.getCookie(key), 0, 0);
+			} else {
+				var asked = ["is_customer", "is_military", "in_range", "zipcode", "state_code"];
+				asked.forEach(function(key) { ZipUtils.setCookie(key, ZipUtils.getCookie(key), 0, 0); });
+				ZipUtils.asked = [];
+			}
+		},
+		/**
+			* Access to cookie and session data 2 forms 1) store (key) retrieves
+			* value 2) store (key, value) assign value to session Store
+			*/
+		store: function (key, value) {
+			if (!ZipUtils.initialized) ZipUtils.initialized = true;
+			if (key && (value || value === false)) ZipUtils.setCookie(key, value, 30);
+		},
+
+        setCookie: function (key, value, days, maxAge) {
+			value = value || '';
+			days = days || 100;
+			if (typeof key !== 'string' || value === '') return;
+			if (window.navigator.cookieEnabled) {
+				var date = new Date(); date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+				var expires = 'expires=' + date.toUTCString();
+				sessionStorage.removeItem(key);
+				document.cookie = key + '=' + value + ';' + expires + ';' + (maxAge ? 'max-age=' + maxAge + ';' : '') + 'path=/';
+			} else {
+				sessionStorage.setItem(key, value);
+			}
+			if (key === 'zipcode') {
+				ZipUtils.updateApplyZipcodes(value);
+			}
+	},
+
+		getCookie: function (key) {
+				var value;
+				if (typeof key !== 'string') return;
+				if (window.navigator.cookieEnabled) {
+					sessionStorage.removeItem(key);
+					value = (new RegExp((key || '=')+'=(.*?); ','gm').exec(document.cookie+'; ') || ['',null])[1] || '';
+				} else {
+					value = sessionStorage.getItem(key) || '';
+				}
+				if (key === 'zipcode') {
+					ZipUtils.updateApplyZipcodes(value);
+				}
+				return value;
+		},
+
+		updateApplyZipcodes: function (value) {
+			value = value || 55402;
+			var anchors = usbUtils.nodeListArray(document.querySelectorAll('[href*="$zipcode"],[onclick*="$zipcode"]'));
+			if (anchors) {
+				anchors.forEach(function(anchor) {
+					if (/a/i.test(anchor.nodeName) && anchor.href) {
+						anchor.href = anchor.href.replace('$zipcode', value);
+					}
+					if (/button/i.test(anchor.nodeName) && anchor.onclick) {
+						anchor.href = anchor.onclick.replace('$zipcode', value);
+					}
+				});
+			}
+		},
+
+		// ... region
+		// ... validation
+		// ... use case
+
+		services: function (postage) {
+			var result = null;
+
+			postage = Object.assign(ZipUtils.postage, postage);
+
+			var aSynchronize = typeof postage.success == "function" ? true : false;
+
+			$.ajax({
+				type: postage.type, // POST | GET
+				url: postage.url, // "/content/dam/usbank/documents/xml/region.xml",
+				cache: aSynchronize,
+				async: aSynchronize,
+				dataType: postage.dataType,
+				success: function (data) {
+					result = data;
+
+					postage.success(data);
+					result = data;
+				},
+				error: function (data) {
+					if (typeof postage.error == "function") {
+						postage.error(data);
+					}
+					result = data;
+				},
+			});
+			return result;
+		},
+
+		assign: function (code) {
+			var flowtype;
+			if (typeof code == 'undefined') code = 'no_code_start';
+			ZipUtils.current_def = ZipUtils.inputFilter[code];
+			ZipUtils.current_code = typeof ZipUtils.current_def == 'object' ? code : null;
+			flowtype = ZipUtils.current_def.flowtype;
+			queue = [flowtype];
+			switch (flowtype) {
+				case 'no_flow_type': case 'pdf': case 'rate_table': break;
+				case 'dda_student_military': case 'dda_military': queue.push('dda_general_customer'); queue.push('dda_military_customer'); break;
+				default: queue.push(flowtype.concat('_customer')); break;
+			}
+			ZipUtils.modalQueue(queue);
+		},
+
+		getCode: function (el) {
+			var code = null;
+			switch (el.nodeName) {
+				case "BUTTON":
+					if (el.dataset.click || el.getAttribute("external-link")) {
+						code = el.dataset.click || el.getAttribute("external-link");
+					} else if (el.onclick) {
+						code = el.onclick
+							.toString()
+							.split(/['"]/)
+							.filter(function (str) {
+								return str.indexOf("#") > -1;
+							});
+						code = code.length > 0 ? code[0] : code;
+					}
+					break;
+				case "A":
+					var href = el.getAttribute("href");
+					var hparts = href.split("#");
+					code =
+						hparts && hparts.length > 0
+							? "#" + hparts[hparts.length - 1]
+							: null;
+
+					break;
+			}
+			return code;
+		},
+
+		attach: function () {
+			ZipUtils.clearStore();
+
+			if (window.Modals) {
+				window.Modals.attach();
+			}
+
+			ZipUtils.setDomValuesZip();
+
+			var form_options = form_options ? form_options : { submitProcessor: {}, };
+			form_options.submitProcessor = ZipUtils.stepGetZip;
+
+			var clickables = document.querySelectorAll('a[href^="#"],button[data-click],button[external-link],button[onclick]');
+
+			if (clickables.length === 0) return;
+
+			usbUtils.nodeListArray(clickables).forEach(function(clickable) {
+				if (clickable.nodeType !== 1) return;
+
+				var code = ZipUtils.getCode(clickable);
+
+				if (code && ZipUtils.inputFilter[code]) {
+
+					clickable.classList.add("zip-util-link");
+
+					ZipUtils.listenTo(clickable, "pointerdown", function (e) {
+						e.preventDefault();
+
+						var code = ZipUtils.getCode(clickable);
+
+						ZipUtils.clearStore();
+						ZipUtils.workplace = /(segmentCodeApply)/.test(clickable.className) || false;
+
+						if (modal_options) {
+							modal_options.entry_point = this;
+							modal_options.entry_point.setAttribute("tabindex", "-1");
+							var template = document.querySelector(".ziputil_template");
+							if (template) modal_options.tid = template.id;
+						}
+
+						if (!code) return;
+						ZipUtils.assign(code);
+
+					});
+
+					ZipUtils.listenTo(clickable, "keydown", function (e) {
+						if (e.which !== 13) return;
+
+						e.preventDefault();
+
+						var code = ZipUtils.getCode(clickable);
+
+						ZipUtils.clearStore();
+						ZipUtils.workplace = /(segmentCodeApply)/.test(clickable.className) || false;
+
+						if (modal_options) {
+							modal_options.entry_point = this;
+							modal_options.entry_point.setAttribute("tabindex", "-1");
+							var template = document.querySelector(".ziputil_template");
+							if (template) modal_options.tid = template.id;
+						}
+
+						if (!code) return;
+						ZipUtils.assign(code);
+
+					});
+
+				}
+			});
+
+
+			(function onLoadOptions() {
+				if (ZipUtils.start_on_load() || ZipUtils.start_on_missing_zipcode()) {
+					ZipUtils.clearStore();
+					if (modal_options) {
+						modal_options.entry_point = document.querySelector("#zipcodes_edit");
+						if (modal_options.entry_point) modal_options.entry_point.setAttribute("tabindex", "-1");
+						var template = document.querySelector(".ziputil_template");
+						if (template) modal_options.tid = template.id;
+						modal_options.closeAction = ZipUtils.start_on_missing_zipcode() ? function() { location.replace(location.origin); } : null;
+					}
+					ZipUtils.assign(ZipUtils.startCode() || "#saveZip");
+				}
+			}());
+
+		},
+
+		booleanResponse: function (e) {
+			var flowtype = ZipUtils.current_def.flowtype;
+			var key = "is_".concat(ZipUtils.current_def.designation);
+			var is_true = /(first_choice)/.test(e.target.value.trim().toLowerCase());
+			ZipUtils.asked.push(ZipUtils.current_step);
+			switch (flowtype) {
+				case "dda_student_military":
+				case "dda_military":
+					if (ZipUtils.current_step == "dda_general_customer")
+						ZipUtils.setCookie("is_customer", is_true);
+
+					if (ZipUtils.current_step == "dda_military_customer")
+						ZipUtils.setCookie("is_military", is_true);
+
+					break;
+
+				default:
+					ZipUtils.setCookie(key, is_true);
+			}
+			ZipUtils.stepRedirectToApply();
+		},
+
+		dismissModal: function (e) {
+			if (e) {
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+			if (modal && queue.length == 0) {
+				modal.close();
+				location.reload(); //Reloading the page to fetch new rates in Rate Table for current zipcode
+			} else modal.slideDialog("up");
+		},
+
+		modalQueue: function (_queue, code) {
+			queue = _queue;
+			ZipUtils.setModalContent();
+		},
+
+		zipError: function (message) {
+			ZipUtils.zipClearError();
+			var err_dom = document.querySelector("#zipcode_error_messages");
+			var err_words = "";
+
+			if (null !== err_dom) {
+				switch (message) {
+					case "empty_field":
+						err_words =
+							ZipUtils.dom_data().zipcodevalidationerror ||
+							ZipUtils.dom_data().default_validationerror;
+						break;
+					case "wrong_length":
+						err_words =
+							ZipUtils.dom_data().zipcodelengtherror ||
+							ZipUtils.dom_data().default_lengtherror;
+						break;
+					case "zipcode_service_error":
+						err_words =
+							ZipUtils.dom_data().zipcodevalidationerror ||
+							ZipUtils.dom_data().default_validationerror;
+						break;
+
+					default:
+						err_words = "Please provide valid a zip code";
+				}
+				var span = document.createElement("p");
+				span.className = "error";
+				err_dom.appendChild(span);
+				span.textContent = err_words;
+				err_dom.parentNode.parentNode.classList.add("error");
+			}
+		},
+
+		zipClearError: function (err) {
+			var err_dom = document.querySelector("#zipcode_error_messages p");
+			if (err_dom != null) {
+				err_dom.remove();
+				document
+					.querySelector("#zipcode_error_messages")
+					.parentNode.parentNode.classList.remove("error");
+			}
+		},
+
+		primaryAction: function (e) {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			if (modal.form) {
+				if (ZipUtils.validateForm()) {
+						ZipUtils.stepGetZip(modal.form);
+				}
+			}
+		},
+
+		validateForm: function () {
+			var input = document.querySelector("#zipcode_entry");
+			var value = (input && input.value) || 0;
+			if (value && value.length == 0) {
+				ZipUtils.zipError("empty_field");
+				return false;
+			}
+			if (value && value.length != 5) {
+				ZipUtils.zipError("wrong_length");
+				return false;
+			}
+			if (value == 0) {
+				ZipUtils.zipError("wrong_length");
+				return false;
+			}
+
+			ZipUtils.zipClearError();
+
+			return true;
+		},
+
+		setModalContent: function () {
+			if (!window.modal) {
+				modal_options.open_on_start = false;
+				Modal(modal_options.tid, modal_options);
+			}
+
+			var zipcode = document.querySelector(".session_zip").textContent;
+
+			if (queue.length === 0) return ZipUtils.stepRedirectToApply();
+
+			var next = queue.shift();
+			ZipUtils.current_step = next;
+			var settings = ZipUtils.settings(next);
+
+			settings.primaryAction = settings.primaryAction || ZipUtils.primaryAction;
+
+			modal.reuseModal(settings);
+
+			if (modal.form) {
+				var input = modal.form.querySelector("input");
+				if (settings.has_input == false) {
+					modal.form.style.display = "none";
+					input.disabled = true;
+				} else {
+					input.disabled = false;
+					if (zipcode && zipcode != "null") input.value = zipcode;
+
+					ZipUtils.formElementHandler();
+				}
+			}
+		},
+
+		/*
+			* .. Modal actions -------------------- END
+			*/
+
+		/*
+			* .. ZipUtils flows -------------------- START
+			*/
+
+		stepGetZip: function (form) {
+			var data = $(form).serializeArray();
+			var zipcode = data[0].value;
+			if (zipcode.length == 5) {
+				var url = ZipUtils.uri.json;
+
+				ZipUtils.services({
+					type: "GET",
+					url: url.replace("__zip__", zipcode),
+					dataType: "json",
+					success: ZipUtils.stepEvaluateZipQuery,
+					error: ZipUtils.stepServiceError,
+				});
+			}
+		},
+
+		stepEvaluateZipQuery: function (data) {
+			var flowtype = ZipUtils.current_def.flowtype;
+			if (data.ZipCodeMappingVO) {
+				ZipUtils.setCookie("zipcode", data.ZipCodeMappingVO.zipCode);
+			}
+			// offer processing not sure what this means yet
+			var offers = ZipUtils.offer();
+
+			// short circuit back to current modal
+			if (data.Error) {
+				if (
+					$.trim(data.Error.code) == "EA007" ||
+					$.trim(data.Error.code) == "EA006"
+				) {
+					// purge locally cached zip code
+					ZipUtils.setCookie("zipcode", "", 0);
+					ZipUtils.setCookie("state_code", "", 0);
+					return ZipUtils.zipError("zipcode_service_error");
+				}
+			}
+
+			// NOTE data shape on success
+			// {"ZipCodeMappingVO":{"stateCode":"CA","zipCode":"94930","county":"FAIRFAX","city":"Marin"}}
+			if (data.ZipCodeMappingVO) {
+				ZipUtils.zipClearError();
+				var zip = data.ZipCodeMappingVO.zipCode;
+				var region = data.ZipCodeMappingVO.stateCode;
+				var zipcode = ZipUtils.getCookie("zipcode");
+				var staticZipsStr = ZipUtils.dom_data().offer_tabs; // array
+				var staticZips = [];
+				var isInStaticZips = false;
+				var isZipInRegion = false;
+				var invalidStates = ZipUtils.dom_data().statecode;
+
+				if (staticZipsStr) {
+					try {
+						staticZips = staticZipsStr.split(",");
+					} catch (e) {}
+				}
+
+				if (staticZips.length > 0) {
+					isInStaticZips = staticZips.indexOf(zipcode) > -1;
+				}
+
+				isZipInRegion =
+				region && invalidStates.length && invalidStates.indexOf(region) == -1;
+
+				if (zipcode && zip && (isZipInRegion || isInStaticZips)) {
+					ZipUtils.setCookie("state_code", region);
+					ZipUtils.setCookie("apply_link", ZipUtils.redirect_url());
+					ZipUtils.setCookie("in_range", true);
+
+					// set DOM with zipcode
+					ZipUtils.setDomValuesZip();
+
+					// get the region now ...
+					if (flowtype == "pdf") ZipUtils.stepGetRegion();
+				} else if (flowtype !== "no_flow_type") {
+					return ZipUtils.modalQueue(["dda_general_customer"]);
+				}
+			} else {
+				ZipUtils.setCookie("in_range", false);
+			}
+
+			ZipUtils.stepRedirectToApply();
+		},
+
+		setDomValuesZip: function () {
+			let zip = ZipUtils.getCookie("zipcode");
+			let zipText = document.querySelector(".session_zip");
+			if (zipText) {
+				zipText.textContent = zip != "null" && zip != null ? zip : "";
+			}
+		},
+
+		stepGetRegion: function () {
+			var uri = ZipUtils.uri.xml;
+			var url = ZipUtils.hosts().service.concat(uri);
+
+			ZipUtils.services({
+				type: "GET",
+				url: url,
+				dataType: "xml",
+				success: ZipUtils.stepEvaluateRegionRequest
+			});
+		},
+
+		stepEvaluateRegionRequest: function (data) {
+			if (data && typeof data == "object") {
+				let state_code = ZipUtils.getCookie("state_code");
+				let xml = $(data);
+				let found = {};
+
+				xml.find("root state_region state_code").filter(function (i, v) {
+					if ($(v)[0].textContent == state_code) {
+						found = {
+							region: i,
+							value: $(v)[0].textContent,
+						};
+						return true;
+					}
+				});
+
+				if (found.value) {
+					ZipUtils.setCookie("state_code", found.region);
+
+					let link = ZipUtils.hosts()
+						.service.concat(ZipUtils.uri.pdf)
+						.replace("__zip__", found.region);
+					let anchor = document.createElement("a");
+
+					anchor.className = "apply-now pdf-link";
+					anchor.textContent = "Link for: ".concat(found.value).concat(" pdf");
+					anchor.setAttribute("target", "_blank");
+					anchor.setAttribute("href", DOMPurify.sanitize(link));
+					ZipUtils.setCookie("pdf_link", anchor);
+				}
+			}
+		},
+
+		stepServiceError: function (data) {
+			var flowtype = ZipUtils.current_def.flowtype;
+			ZipUtils.setCookie("in_range", false);
+				if(data.target){
+				data.preventDefault();
+				data.stopImmediatePropagation();
+			}
+
+			// these provide results validation
+			if (/(rate_table|no_flow_type|pdf)/.test(flowtype)) {
+				ZipUtils.zipError("zipcode_service_error");
+				// these
+			} else {
+				ZipUtils.stepRedirectToApply();
+			}
+		},
+
+		stepRedirectToApply: function (e) {
+			if (!ZipUtils.validateForm()) return false;
+			var flowtype = ZipUtils.current_def.flowtype;
+			var zipcode = ZipUtils.getCookie("zipcode");
+			var statecode = ZipUtils.getCookie("state_code");
+			var zip = zipcode && zipcode.length == 5;
+			var is_customer = ZipUtils.getCookie("is_customer") == "true";
+			var is_military = ZipUtils.getCookie("is_military") == "true";
+			var in_range = ZipUtils.getCookie("in_range") == "true";
+			var this_step = ZipUtils.current_step;
+			var answered = ZipUtils.asked.indexOf(this_step) > -1;
+			var first_step = false;
+			var zoned = ZipUtils.offer_zones();
+
+			var url = ZipUtils.redirect_url();
+
+			var state_limited = zoned && new RegExp(zoned.states_filter);
+			var zip_allow = zoned && new RegExp(zoned.exception_filter);
+
+			var state_block = state_limited && state_limited.test(statecode);
+			var zip_block = zip_allow && !zip_allow.test(zipcode);
+
+			// if this is a offer and state is blocked
+			// and zipcode is not in the accepted zip then we error out
+			if (state_limited && state_block && zip_block) {
+				return ZipUtils.modalQueue(["#sorryMessageIF"]);
+			}
+
+			switch (flowtype) {
+				case "no_flow_type":
+					ZipUtils.dismissModal();
+				case "rate_table":
+					return true;
+				case "dda_student_military":
+				case "dda_military":
+					first_step =
+						this_step == "dda_military" ||
+						this_step == "dda_student_military" ||
+						false;
+
+					if (
+						this_step == "dda_military_customer" &&
+						answered &&
+						!is_military
+					) {
+						return ZipUtils.modalQueue(["dda_military_error"]);
+					}
+
+					if (this_step == "dda_general_customer" && answered && !is_customer) {
+						return ZipUtils.modalQueue(["dda_error"]);
+					}
+
+					if (!in_range && first_step) {
+						if (queue.includes("dda_general_customer"))
+							return ZipUtils.setModalContent();
+						return ZipUtils.modalQueue(["dda_general_customer"]);
+					}
+
+					if (
+						(in_range && !is_military) ||
+						(!in_range && is_customer && !is_military)
+					) {
+						return ZipUtils.modalQueue(["dda_military_customer"]);
+					}
+
+					if (!in_range && is_customer && is_military)
+						return setTimeout(function () {
+							window.location.href = DOMPurify.sanitize(url);
+						}, 500);
+
+					if (in_range && is_military)
+						return setTimeout(function () {
+							window.location.href = DOMPurify.sanitize(url);
+						}, 500);
+
+					break;
+
+				case "pdf":
+					if (zip && in_range)
+						return setTimeout(function () {
+							ZipUtils.modalQueue(["getpdf"]);
+						}, 800);
+					break;
+
+				default:
+					first_step =
+						this_step == "dda_general" || this_step == "sav_general" || false;
+
+					var asked = ZipUtils.asked.indexOf("dda_general_customer") > -1;
+
+					if (flowtype == "sav_general" && !is_customer && asked) {
+						return ZipUtils.modalQueue(["#savingsOfferOutOfRange"]);
+					}
+
+					if (!is_customer && asked) {
+						return ZipUtils.modalQueue(["dda_general_error"]);
+					}
+
+					if (!in_range && first_step) {
+						return ZipUtils.modalQueue(["dda_general_customer"]);
+					}
+
+					if (!in_range && is_customer)
+						return setTimeout(function () {
+							window.location.href = DOMPurify.sanitize(url);
+						}, 500);
+					if (zip && in_range) {
+						return setTimeout(function () {
+							window.location.href = DOMPurify.sanitize(url);
+						}, 500);
+					}
+			}
+
+			if (queue.length > 0) return ZipUtils.setModalContent();
+
+			if (is_customer === false) {
+				return ZipUtils.modalQueue(["#dda_general_outofrange"]);
+			}
+		},
+
+		/*
+			* .. ZipUtils flows -------------------- END
+			*/
+
+		settings: function (code) {
+			var update = {};
+			var zipcode_modal_content = ZipUtils.dom_data_settings(".zipcode-modal-content");
+			var data_settings = null;
+			var pdfFlow = false;
+			if (zipcode_modal_content) {
+				var words = {
+					heading: zipcode_modal_content.heading,
+					body: zipcode_modal_content.body,
+					input_label: zipcode_modal_content.input_label,
+					firstButton: zipcode_modal_content.firstbutton,
+					secondButton: null,
+					has_input: true,
+					primaryAction: null,
+					secondaryAction: null,
+				};
+			}
+
+			switch (code) {
+				/*
+					* On finding the correct available application then provide
+					* notification of redirect with option to not follow
+					*/
+				case "sav_general_redirect":
+				case "dda_military_redirect":
+				case "dda_student_redirect":
+				case "dda_general_redirect":
+					data_settings = ZipUtils.dom_data_settings(".sav_general_redirect");
+					update.secondButton = data_settings.secondbutton;
+					update.primaryAction = ZipUtils.stepRedirectToApply;
+					update.secondaryAction = ZipUtils.dismissModal;
+					break;
+
+				/*
+					* Provide redirect to leaving to go to location map
+					*/
+				case "rate_table_location_redirect":
+					data_settings = ZipUtils.dom_data_settings(
+						".rate_table_location_redirect"
+					);
+					update.secondButton = data_settings.secondbutton;
+					update.primaryAction = ZipUtils.stepRedirectToApply;
+					update.secondaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "dda_student_customer":
+				case "sav_general_customer":
+				case "dda_general_customer":
+				case "#financingOptions":
+					data_settings = ZipUtils.dom_data_settings(".dda_student_customer");
+					update.secondButton = data_settings.secondbutton;
+					update.primaryAction = ZipUtils.booleanResponse;
+					update.secondaryAction = ZipUtils.booleanResponse;
+					break;
+
+				case "dda_military_customer":
+				case "#financingOptionsMilitary":
+					data_settings = ZipUtils.dom_data_settings(".dda_military_customer");
+					update.secondButton = data_settings.secondbutton;
+					update.primaryAction = ZipUtils.booleanResponse;
+					update.secondaryAction = ZipUtils.booleanResponse;
+					break;
+
+				case "dda_error":
+				case "#ddaOutOfRange":
+					data_settings = ZipUtils.dom_data_settings(".dda_error");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "sav_rates_outofrange":
+				case "dda_student_outofrange":
+				case "ddarange":
+				case "dda_general__military_outofrange":
+				case "sav_general_outofoutofrange":
+				case "#sorryMessageIF":
+					data_settings = ZipUtils.dom_data_settings(".sav_rates_outofrange");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "dda_general_error":
+				case "#sorryMessageMilitary":
+					data_settings = ZipUtils.dom_data_settings(".dda_general_error");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "dda_military_error":
+				case "#sorryMessageMilitary":
+					data_settings = ZipUtils.dom_data_settings(".dda_military_error");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "no_flow_type_error":
+					data_settings = ZipUtils.dom_data_settings(".no_flow_type_error");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "rate_table_redirect":
+				case "no_flow_type_redirect":
+					data_settings = ZipUtils.dom_data_settings(".rate_table_redirect");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "getpdf":
+				case "#cpiPDFSection":
+					var zip_link = ZipUtils.getCookie("pdf_link");
+					data_settings = ZipUtils.dom_data_settings(".getpdf");
+					pdfFlow = true;
+					update.body = data_settings.body.replace("{zipLink}", zip_link);
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "#savingsOfferOutOfRange":
+					data_settings = ZipUtils.dom_data_settings(".savingsOfferOutOfRange");
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "offer_outofrange_infolink":
+				case "#savingsOutOfRange":
+					data_settings = ZipUtils.dom_data_settings(
+						".offer_outofrange_infolink"
+					);
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+
+				case "offer_outofrange_contactus":
+				case "#checkpromoapplyZipcodes":
+					data_settings = ZipUtils.dom_data_settings(
+						".offer_outofrange_contactus"
+					);
+					update.primaryAction = ZipUtils.dismissModal;
+					break;
+			}
+			if (data_settings) {
+				update.heading = data_settings.heading;
+				if (!pdfFlow) {
+					update.body = data_settings.body;
+				}
+				update.firstButton = data_settings.firstbutton;
+				update.has_input = false;
+			}
+			return Object.assign(words, update);
+		},
+	};
+})();

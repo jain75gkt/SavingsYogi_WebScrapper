@@ -1,0 +1,1 @@
+Bootstrapper.bindImmediate(function(){var Bootstrapper=window["Bootstrapper"];var ensightenOptions=Bootstrapper.ensightenOptions;var script=document.createElement("script");script.id="_cls_detector";script.src="https://cdn.gbqofs.com/citi-na-prod/p/detector-dom.min.js";document.head.appendChild(script)},3924268,555592);

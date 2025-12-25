@@ -1,4 +1,4 @@
-<Activity mc:Ignorable="sap sap2010" x:Class="CaptureScreenshot" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:sd1="clr-namespace:System.Drawing;assembly=System.Drawing.Common" xmlns:sd2="clr-namespace:System.Drawing;assembly=System.Drawing.Primitives" xmlns:si="clr-namespace:System.IO;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Activity mc:Ignorable="sap sap2010" x:Class="CaptureScreenshot" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:sd1="clr-namespace:System.Drawing;assembly=System.Drawing.Common" xmlns:sd2="clr-namespace:System.Drawing;assembly=System.Drawing.Primitives" xmlns:si="clr-namespace:System.IO;assembly=System.Private.CoreLib" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <x:Members>
     <x:Property Name="IN_in_config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
     <x:Property Name="IN_in_transactionItem" Type="InArgument(sd:DataRow)" />
@@ -117,28 +117,24 @@
       <AssemblyReference>System.Runtime.InteropServices</AssemblyReference>
       <AssemblyReference>Studio.Generated.TypedDataTable1</AssemblyReference>
       <AssemblyReference>System.Private.Xml</AssemblyReference>
-      <AssemblyReference>System.CodeDom</AssemblyReference>
-      <AssemblyReference>Microsoft.VisualBasic.Forms</AssemblyReference>
-      <AssemblyReference>Microsoft.VisualBasic.Core</AssemblyReference>
     </sco:Collection>
   </TextExpression.ReferencesForImplementation>
-  <Sequence DisplayName="CaptureScreenshot" sap:VirtualizedContainerService.HintSize="720,4028.6666666666665" sap2010:WorkflowViewState.IdRef="Sequence_1">
+  <Sequence DisplayName="CaptureScreenshot" sap:VirtualizedContainerService.HintSize="850,2220" sap2010:WorkflowViewState.IdRef="Sequence_1">
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
         <x:Boolean x:Key="IsExpanded">True</x:Boolean>
       </scg:Dictionary>
     </sap:WorkflowViewStateService.ViewState>
-    <ui:LogMessage DisplayName="Log Message" sap:VirtualizedContainerService.HintSize="522,176.66666666666666" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[&quot;Capturing the screenshots&quot;]" />
-    <ui:CreateDirectory ContinueOnError="{x:Null}" Output="{x:Null}" DisplayName="Create Folder" sap:VirtualizedContainerService.HintSize="522,124" sap2010:WorkflowViewState.IdRef="CreateDirectory_1" Path="[In_in_Config(&quot;SSPath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)+&quot;\&quot;+IN_in_transactionItem(&quot;Site Name&quot;).ToString]" />
-    <TryCatch DisplayName="Try Catch" sap:VirtualizedContainerService.HintSize="522,3705.3333333333335" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+    <ui:LogMessage DisplayName="Log Message" sap:VirtualizedContainerService.HintSize="520,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[&quot;Capturing the screenshots&quot;]" />
+    <TryCatch DisplayName="Try Catch" sap:VirtualizedContainerService.HintSize="520,2022.4" sap2010:WorkflowViewState.IdRef="TryCatch_1">
       <TryCatch.Try>
-        <uix:NApplicationCard AttachMode="ByInstance" CloseMode="[UiPath.UIAutomationNext.Enums.NAppCloseMode.Always]" DisplayName="Edge Certificate of Deposit  High Yield CD Ra" HealingAgentBehavior="[UiPath.UIAutomationNext.Enums.NHealingAgentBehavior.RecommendationOnly]" sap:VirtualizedContainerService.HintSize="520,3192.6666666666665" sap2010:WorkflowViewState.IdRef="NApplicationCard_2" IsIncognito="True" ScopeGuid="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Version="V2" WindowResize="Maximize">
+        <uix:NApplicationCard AttachMode="ByInstance" CloseMode="[UiPath.UIAutomationNext.Enums.NAppCloseMode.Always]" DisplayName="Edge Certificate of Deposit  High Yield CD Ra" HealingAgentBehavior="[UiPath.UIAutomationNext.Enums.NHealingAgentBehavior.RecommendationOnly]" sap:VirtualizedContainerService.HintSize="518.4,1239.2" sap2010:WorkflowViewState.IdRef="NApplicationCard_2" IsIncognito="True" ScopeGuid="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Version="V2" WindowResize="Maximize">
           <uix:NApplicationCard.Body>
             <ActivityAction x:TypeArguments="x:Object">
               <ActivityAction.Argument>
                 <DelegateInArgument x:TypeArguments="x:Object" Name="WSSessionData" />
               </ActivityAction.Argument>
-              <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="518,3020.6666666666665" sap2010:WorkflowViewState.IdRef="Sequence_3">
+              <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="516.8,1068.8" sap2010:WorkflowViewState.IdRef="Sequence_3">
                 <Sequence.Variables>
                   <Variable x:TypeArguments="si:FileInfo" Name="SSfile" />
                 </Sequence.Variables>
@@ -147,63 +143,20 @@
                     <x:Boolean x:Key="IsExpanded">True</x:Boolean>
                   </scg:Dictionary>
                 </sap:WorkflowViewStateService.ViewState>
-                <ui:GetLastDownloadedFile FileResource="{x:Null}" DisplayName="Wait for Download" DownloadFolder="[System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), &quot;Downloads&quot;)]" File="[SSfile]" sap:VirtualizedContainerService.HintSize="484,2536.6666666666665" sap2010:WorkflowViewState.IdRef="GetLastDownloadedFile_4" IgnoreFiles="tmp,dwn,crdownload" Timeout="100">
+                <ui:GetLastDownloadedFile FileResource="{x:Null}" Timeout="{x:Null}" DisplayName="Wait for Download" DownloadFolder="[System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), &quot;Downloads&quot;)]" File="[SSfile]" sap:VirtualizedContainerService.HintSize="483.2,817.6" sap2010:WorkflowViewState.IdRef="GetLastDownloadedFile_4" IgnoreFiles="tmp">
                   <ui:GetLastDownloadedFile.Body>
                     <ActivityAction>
-                      <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="450,2238.6666666666665" sap2010:WorkflowViewState.IdRef="Sequence_8">
+                      <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="449.6,523.2" sap2010:WorkflowViewState.IdRef="Sequence_8">
                         <sap:WorkflowViewStateService.ViewState>
                           <scg:Dictionary x:TypeArguments="x:String, x:Object">
                             <x:Boolean x:Key="IsExpanded">True</x:Boolean>
                           </scg:Dictionary>
                         </sap:WorkflowViewStateService.ViewState>
-                        <uix:NKeyboardShortcuts ActivateBefore="True" ClickBeforeMode="None" DisplayName="Keyboard Shortcuts" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="416,488" sap2010:WorkflowViewState.IdRef="NKeyboardShortcuts_3" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Shortcuts="[d(hk)][d(ctrl)d(shift)]i[u(shift)u(ctrl)][u(hk)]" Version="V5">
+                        <uix:NKeyboardShortcuts ActivateBefore="True" ClickBeforeMode="None" DisplayName="Keyboard Shortcuts" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="416,463.2" sap2010:WorkflowViewState.IdRef="NKeyboardShortcuts_3" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Shortcuts="[d(hk)][d(ctrl)]l[u(ctrl)][u(hk)]" Version="V5">
                           <uix:NKeyboardShortcuts.VerifyOptions>
-                            <uix:VerifyExecutionOptions DisplayName="Verification target" Mode="Disappears" Retry="False">
+                            <uix:VerifyExecutionOptions DisplayName="Verification target" Mode="Appears" Retry="False">
                               <uix:VerifyExecutionOptions.Target>
-                                <uix:TargetAnchorable DesignTimeRectangle="0, 0, 0, 0" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" Guid="c09234d7-4b53-403d-9080-467bd987e60e" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]" />
-                              </uix:VerifyExecutionOptions.Target>
-                              <uix:VerifyExecutionOptions.Timeout>
-                                <InArgument x:TypeArguments="x:Double" />
-                              </uix:VerifyExecutionOptions.Timeout>
-                            </uix:VerifyExecutionOptions>
-                          </uix:NKeyboardShortcuts.VerifyOptions>
-                        </uix:NKeyboardShortcuts>
-                        <uix:NKeyboardShortcuts ActivateBefore="True" ClickBeforeMode="None" DisplayName="Keyboard Shortcuts" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="416,488" sap2010:WorkflowViewState.IdRef="NKeyboardShortcuts_4" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Shortcuts="[d(hk)][d(ctrl)d(shift)]p[u(shift)u(ctrl)][u(hk)]" Version="V5">
-                          <uix:NKeyboardShortcuts.VerifyOptions>
-                            <uix:VerifyExecutionOptions DisplayName="Verification target" Mode="Disappears" Retry="False">
-                              <uix:VerifyExecutionOptions.Target>
-                                <uix:TargetAnchorable DesignTimeRectangle="0, 0, 0, 0" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" Guid="c09234d7-4b53-403d-9080-467bd987e60e" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]" />
-                              </uix:VerifyExecutionOptions.Target>
-                              <uix:VerifyExecutionOptions.Timeout>
-                                <InArgument x:TypeArguments="x:Double" />
-                              </uix:VerifyExecutionOptions.Timeout>
-                            </uix:VerifyExecutionOptions>
-                          </uix:NKeyboardShortcuts.VerifyOptions>
-                        </uix:NKeyboardShortcuts>
-                        <ui:SetToClipboard DisplayName="Set To Clipboard" sap:VirtualizedContainerService.HintSize="416,92" sap2010:WorkflowViewState.IdRef="SetToClipboard_1" Text="Capture full size screenshot" />
-                        <uix:NKeyboardShortcuts ActivateBefore="True" ClickBeforeMode="[UiPath.UIAutomationNext.Enums.NClickMode.Single]" DisplayName="Keyboard Shortcuts 'Run'" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="416,560" sap2010:WorkflowViewState.IdRef="NKeyboardShortcuts_5" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Shortcuts="[d(hk)][d(ctrl)]v[u(ctrl)][u(hk)]" Version="V5">
-                          <uix:NKeyboardShortcuts.Target>
-                            <uix:TargetAnchorable BrowserURL="bankrate.com/banking/cds/cd-rates" CVScreenId="9c911a4d-5790-4b43-802a-6e1f001da2da" ContentHash="j7snG953HEWzftXDm-MS9g" CvTextArea="1121, 252, 151, 19" CvTextArgument="Run &gt;Command" CvType="Text" DesignTimeRectangle="1123, 248, 772, 30" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;ctrl name='DevTools' role='document' /&gt;&lt;ctrl idx='17' role='grouping' /&gt;" Guid="7c81ec2f-95dd-4566-a238-fc007e275e90" InformativeScreenshot="039f5f27e5af9ab925fe693cc544fd9f.png" Reference="wmoQtc-7M02aRki2x1FIUw/0YuUe0cMd0GudkJAI9joSw" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='Chrome_WidgetWin_1' title='Best CD Rates Of January 2026 - Up to 4.20% | Bankrate - [InPriv*' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None" />
-                          </uix:NKeyboardShortcuts.Target>
-                          <uix:NKeyboardShortcuts.VerifyOptions>
-                            <uix:VerifyExecutionOptions DisplayName="Verification target" Mode="Disappears" Retry="False">
-                              <uix:VerifyExecutionOptions.Target>
-                                <uix:TargetAnchorable DesignTimeRectangle="0, 0, 0, 0" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" Guid="c09234d7-4b53-403d-9080-467bd987e60e" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]" />
-                              </uix:VerifyExecutionOptions.Target>
-                              <uix:VerifyExecutionOptions.Timeout>
-                                <InArgument x:TypeArguments="x:Double" />
-                              </uix:VerifyExecutionOptions.Timeout>
-                            </uix:VerifyExecutionOptions>
-                          </uix:NKeyboardShortcuts.VerifyOptions>
-                        </uix:NKeyboardShortcuts>
-                        <uix:NKeyboardShortcuts ActivateBefore="True" ClickBeforeMode="[UiPath.UIAutomationNext.Enums.NClickMode.Single]" DisplayName="Keyboard Shortcuts 'Run'" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="416,550.6666666666666" sap2010:WorkflowViewState.IdRef="NKeyboardShortcuts_6" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Shortcuts="[d(hk)][k(Enter)][u(hk)]" Version="V5">
-                          <uix:NKeyboardShortcuts.Target>
-                            <uix:TargetAnchorable BrowserURL="bankrate.com/banking/cds/cd-rates" CVScreenId="9c911a4d-5790-4b43-802a-6e1f001da2da" ContentHash="j7snG953HEWzftXDm-MS9g" CvTextArea="1121, 252, 151, 19" CvTextArgument="Run &gt;Command" CvType="Text" DesignTimeRectangle="1123, 248, 772, 30" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;ctrl name='DevTools' role='document' /&gt;&lt;ctrl idx='17' role='grouping' /&gt;" Guid="7c81ec2f-95dd-4566-a238-fc007e275e90" InformativeScreenshot="039f5f27e5af9ab925fe693cc544fd9f.png" Reference="wmoQtc-7M02aRki2x1FIUw/0YuUe0cMd0GudkJAI9joSw" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='Chrome_WidgetWin_1' title='Best CD Rates Of January 2026 - Up to 4.20% | Bankrate - [InPriv*' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None" />
-                          </uix:NKeyboardShortcuts.Target>
-                          <uix:NKeyboardShortcuts.VerifyOptions>
-                            <uix:VerifyExecutionOptions DisplayName="Verification target" Mode="Disappears" Retry="False">
-                              <uix:VerifyExecutionOptions.Target>
-                                <uix:TargetAnchorable DesignTimeRectangle="0, 0, 0, 0" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" Guid="c09234d7-4b53-403d-9080-467bd987e60e" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]" />
+                                <uix:TargetAnchorable DesignTimeRectangle="0, 0, 0, 0" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.None]" Guid="d8251d1c-fc46-43d6-814f-1584cc9b17a6" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]" />
                               </uix:VerifyExecutionOptions.Target>
                               <uix:VerifyExecutionOptions.Timeout>
                                 <InArgument x:TypeArguments="x:Double" />
@@ -221,17 +174,12 @@
                     </scg:Dictionary>
                   </sap:WorkflowViewStateService.ViewState>
                 </ui:GetLastDownloadedFile>
-                <ui:MoveFile ContinueOnError="{x:Null}" DestinationResource="{x:Null}" PathResource="{x:Null}" Destination="[In_in_Config(&quot;SSPath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)+&quot;\&quot;+IN_in_transactionItem(&quot;Site Name&quot;).ToString]" DisplayName="Move File" sap:VirtualizedContainerService.HintSize="484,200.66666666666666" sap2010:WorkflowViewState.IdRef="MoveFile_1" Path="[SSfile.ToString]" />
-                <ui:RenameFileX FileResource="{x:Null}" OutputFileResource="{x:Null}" DisplayName="Rename File" FilePath="[In_in_Config(&quot;SSPath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)+&quot;\&quot;+IN_in_transactionItem(&quot;Site Name&quot;).ToString+&quot;\&quot;+SSfile.Name]" sap:VirtualizedContainerService.HintSize="484,219.33333333333334" sap2010:WorkflowViewState.IdRef="RenameFileX_2" KeepExtension="True" NewName="[IN_in_transactionItem(&quot;Unique Site ID&quot;).ToString+&quot;__&quot;+IN_in_transactionItem(&quot;Unique Page ID&quot;).ToString+&quot;__&quot;+Now.ToString().Replace(&quot;/&quot;,&quot;-&quot;).Replace(&quot;:&quot;,&quot;_&quot;)]" />
+                <ui:MoveFile ContinueOnError="{x:Null}" Destination="{x:Null}" DestinationResource="{x:Null}" PathResource="{x:Null}" DisplayName="Move File" sap:VirtualizedContainerService.HintSize="483.2,187.2" sap2010:WorkflowViewState.IdRef="MoveFile_1" Path="[SSfile.Directory.ToString]" />
               </Sequence>
             </ActivityAction>
           </uix:NApplicationCard.Body>
           <uix:NApplicationCard.DialogHandling>
-            <uix:DialogHandling ConfirmDialogResponse="[UiPath.UIAutomationNext.Enums.NBrowserDialogResponse.OK]" DismissAlerts="True" DismissConfirms="True" DismissPrompts="True" PromptDialogResponse="[UiPath.UIAutomationNext.Enums.NBrowserDialogResponse.Cancel]">
-              <uix:DialogHandling.PromptDialogResponseText>
-                <InArgument x:TypeArguments="x:String" />
-              </uix:DialogHandling.PromptDialogResponseText>
-            </uix:DialogHandling>
+            <uix:DialogHandling />
           </uix:NApplicationCard.DialogHandling>
           <uix:NApplicationCard.OCREngine>
             <ActivityFunc x:TypeArguments="sd1:Image, scg:IEnumerable(scg:KeyValuePair(sd2:Rectangle, x:String))">
@@ -241,7 +189,7 @@
             </ActivityFunc>
           </uix:NApplicationCard.OCREngine>
           <uix:NApplicationCard.TargetApp>
-            <uix:TargetApp Area="-11, -11, 1942, 1030" BrowserType="Edge" ContentHash="CxvgVQXpT0iGpmKPQzoR9w" IconBase64="iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAFiUAABYlAUlSJPAAAAMdSURBVGhD7ZpbSBRRHIfXqOhChWUREV0IopcgwuihHoN6qAcfYtUwXZXIC10oCoMkiqIgLAmphygpKkSLiDTCh26WKREkUUpFGWZqlrrWat6+OHOcRvdozewOsw74h+/F/Z0/58M5Z87OrMejFVGeOOZ5EvB5vFREeQlEeWGMERBz0+Yo5irm/Hfy8cR6vJSPMGhMIuaqzVmTEDZy8v3BwTFMvyah/ScS8I0QcAXa5TR4zSsfugFtTYzRBWuWgBAI/qOrGBeINGEL7C6ED02j8+4rPK2DvLuwLheiU2FCvNonVMIWOFKM6Qr8hptVsD5X7RMqjgqIGhiAxh+w8bjaKxRsFWjpgFtVcL1iOI/fykmLyev1qQVW7lf7WcVWgYpamL9DzUxOhLWHpExvn8z29cOZUpiapOat4IiAzoKdUPrSyNd+gcVZas4KjgoIkgvgZ7fM9w/InSk4YwXHBdbkyPWgl++8mrGC4wKrDkDDd2NMxkU1YwXHBbbmQfsvmRe70pZTasYKjgrMToXiSmM7bWqD5XvUnBUcE4j2wZVH0N1j5IuewawUNWsFWwUa2+DyAyi4P5wbFdDqN3Kimtth80m1n1VsFbBS5TUwJ03tZ5WICfi74GwZzEhWe1rBVgFx2hTHZ3GHHUpdI3xshtZOeYTQSyzmoyUwKVHtaxZbBSrrYGk2TE8awnaYmQJLsmDTCTh3z9hGRYlFHXda7WsWWwX+tQvpTEuChHx5jNCr+n3ou5HjAjr5Zca4b37YcEzNmCFiAqsPQkdAjhOXUWaIR4qICSzKhDcNcpxYzIeL1IwZIiawMANq6l0ssGKv/AoqqrsXsi+pGTNETGDfVeNQJ+4PYosNzpjBcYGJCRCbA/7BBSzqVT3EhHiscFQgJh3SLsi7tV7ifpAaxrcyWwVGe6xy7QnceSGPFJ1dRl5U4UOYsk3taxZbBaxUTx/croa56WpPKzguIBauuITEOLGVBvezStgC/3u4q/P6M5Q8l2tg2S75sCu4VyiELRBpxgUijRBw90s+179mdfWLbq940e36nxq4/sceLv+5zR9uB7jx0tLe1AAAAABJRU5ErkJggg==" InformativeScreenshot="2c24a1032396459d6aaaa5e3bcc1da7e.jpg" Reference="wmoQtc-7M02aRki2x1FIUw/zraeQ7xwP0Kl9FnGpPFd9w" Selector="&lt;html app='msedge.exe' title='Best CD Rates Of January 2026 - Up to 4.20% | Bankrate' /&gt;" Url="[IN_in_transactionItem(&quot;Page URL&quot;).ToString]" Version="V2">
+            <uix:TargetApp Area="-9, -9, 1938, 1038" BrowserType="Edge" IconBase64="iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAALeSURBVDhPndNJSFRxHAfw6SDBe+OSy7xt3syL6BCo01hpQhuRRYeQEnJJ00qtzCUrM7NFU1PU0jLTXCeipENIh4iKiASJUgiJ8lK26aizNPvyDvGNeT5F69bhC+/wPr8Ffn8FgGWLUxdNrGmKJqrbYolX3TriY5+O/NCnJ5/1xJHlfRuU/N//K+Y/aqOJoMYYor5bR3oG40i83qjE6NYQjO0Iw1hSGEa3h+LlpmDrg/XKkn8K1EUTQc0xxKOBtSSGEpUY37UC3/ZG4ud+FabSVDCmqzCdQWE6XYXP+yIwnBRas6RAUwxR/1BP4t3mYEwkR2AyVYXJNBWm0gOhMJVBwZhJYSabgjmXhimXwo+cqFSpQEMskXhPT/4e2RKC7ymRMpqDxkDXTArT2RRmD1Mw5dMwF9CwFjOwnWbM9nJGq7ihI9ufJyjxNTlCAlI3Gc4cpDB7iIIpj4b5OA1LEYNfJxnYyhjYKhg4LrGlii49OTyyLRTGwK4HZJglw1wK5mM0LIUyPMPAdo6B4wILZzUHZ536vuLuOuX78d0rJDSdRWMmh4LpCAXzURqWEwysJdK4sJUzsFeycFRxcNZycDWo4W7mnyq648PfTCSHw3SIhukwDXM+DUsBA2tg3FIGtrMM7OdZOC5zcNZwcNWr4W7i4Wnh4b3JDyj640M6JlIiYAl0DOy5aFx7BQvHRRbOKxxcV9VwN/LwXJcgfO0a+Du1ZYreBHLrp5Rw2IpYeVwW9nJ2YU9X3SJ4QwPfLQnC3y2I/h5htXQHQ3tCnzhOMXOwkoWzioOrloO7gYfnGg9vqww7tPB3CRB7BYj9QtvCIQ3uDOGNxfQXdwDWcHDXq+Fp5uFt0cDXpoHvtgb+Lu08hGgQ3ooGIXjJW5goZFd5G/hhT6MMb8rwjhZizwIM5LFoEKKWnPJ8fE38cm+rJs/Xrhn2d2qtYo9gFftXWkWDYBYNwgvRIEjnuzhLCvxP/gC342hQD3gNBAAAAABJRU5ErkJggg==" InformativeScreenshot="72b71e5ff34ba48a7619a1067c7e611d.jpg" Selector="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" Url="[IN_in_transactionItem(&quot;CD page&quot;).ToString]" Version="V2">
               <uix:TargetApp.Arguments>
                 <InArgument x:TypeArguments="x:String" />
               </uix:TargetApp.Arguments>
@@ -264,13 +212,13 @@
             <ActivityAction.Argument>
               <DelegateInArgument x:TypeArguments="ui:InvalidUiElementException" Name="exception" />
             </ActivityAction.Argument>
-            <Sequence DisplayName="Body" sap:VirtualizedContainerService.HintSize="520,227.33333333333334" sap2010:WorkflowViewState.IdRef="Sequence_9">
+            <Sequence DisplayName="Body" sap:VirtualizedContainerService.HintSize="518.4,224.8" sap2010:WorkflowViewState.IdRef="Sequence_9">
               <sap:WorkflowViewStateService.ViewState>
                 <scg:Dictionary x:TypeArguments="x:String, x:Object">
                   <x:Boolean x:Key="IsExpanded">True</x:Boolean>
                 </scg:Dictionary>
               </sap:WorkflowViewStateService.ViewState>
-              <ui:SendHotkey ClickBeforeTyping="{x:Null}" DelayBefore="{x:Null}" DelayBetweenKeys="{x:Null}" DelayMS="{x:Null}" EmptyField="{x:Null}" SendWindowMessages="{x:Null}" Activate="True" DisplayName="Send Hotkey" sap:VirtualizedContainerService.HintSize="486,163.33333333333334" sap2010:WorkflowViewState.IdRef="SendHotkey_1" Key="l" KeyModifiers="Ctrl" SpecialKey="False">
+              <ui:SendHotkey ClickBeforeTyping="{x:Null}" DelayBefore="{x:Null}" DelayBetweenKeys="{x:Null}" DelayMS="{x:Null}" EmptyField="{x:Null}" SendWindowMessages="{x:Null}" Activate="True" DisplayName="Send Hotkey" sap:VirtualizedContainerService.HintSize="484.8,160.8" sap2010:WorkflowViewState.IdRef="SendHotkey_1" Key="l" KeyModifiers="Ctrl" SpecialKey="False">
                 <ui:SendHotkey.Target>
                   <ui:Target ClippingRegion="{x:Null}" Element="{x:Null}" Selector="{x:Null}" Id="45b3105a-dbdd-4621-8dc1-0e7606ce97eb">
                     <ui:Target.TimeoutMS>
@@ -285,9 +233,24 @@
             </Sequence>
           </ActivityAction>
         </Catch>
+        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_2">
+          <ActivityAction x:TypeArguments="s:Exception">
+            <ActivityAction.Argument>
+              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
+            </ActivityAction.Argument>
+            <Sequence DisplayName="Body" sap:VirtualizedContainerService.HintSize="518.4,233.6" sap2010:WorkflowViewState.IdRef="Sequence_11">
+              <sap:WorkflowViewStateService.ViewState>
+                <scg:Dictionary x:TypeArguments="x:String, x:Object">
+                  <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+                </scg:Dictionary>
+              </sap:WorkflowViewStateService.ViewState>
+              <ui:LogMessage DisplayName="Log Message" sap:VirtualizedContainerService.HintSize="484.8,169.6" sap2010:WorkflowViewState.IdRef="LogMessage_2" Level="Error" Message="[&quot;Screenshot not saved due to :&quot;+exception.Message]" />
+            </Sequence>
+          </ActivityAction>
+        </Catch>
       </TryCatch.Catches>
       <TryCatch.Finally>
-        <Sequence DisplayName="Finally" sap:VirtualizedContainerService.HintSize="520,94.66666666666667" sap2010:WorkflowViewState.IdRef="Sequence_10">
+        <Sequence DisplayName="Finally" sap:VirtualizedContainerService.HintSize="518.4,94.4" sap2010:WorkflowViewState.IdRef="Sequence_10">
           <sap:WorkflowViewStateService.ViewState>
             <scg:Dictionary x:TypeArguments="x:String, x:Object">
               <x:Boolean x:Key="IsExpanded">True</x:Boolean>

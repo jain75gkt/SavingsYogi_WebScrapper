@@ -1,0 +1,143 @@
+@font-face {
+    font-family: "Gotham";
+    font-weight: 500;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/E83D71A074DF776F4.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/E83D71A074DF776F4.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham";
+    font-weight: 700;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/CC8B46FD41C3A5502.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/CC8B46FD41C3A5502.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Tabular";
+    font-weight: 500;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/0C7FB2075CD46FCD8.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/0C7FB2075CD46FCD8.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Tabular";
+    font-weight: 700;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/618D797B86DC14989.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/618D797B86DC14989.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 400;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/9ECBC8FFB535D0532.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/9ECBC8FFB535D0532.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 400;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/9ECBC8FFB535D0532.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/9ECBC8FFB535D0532.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 500;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/C1B705B7AD8D5B4C6.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/C1B705B7AD8D5B4C6.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 500;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/1FA395F189E4027D6.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/1FA395F189E4027D6.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 700;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/F68DD4439278D0467.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/F68DD4439278D0467.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow";
+    font-weight: 700;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/591F595AD59B7B17F.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/591F595AD59B7B17F.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow Tabular";
+    font-weight: 400;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/2E37EA63AAD84B117.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/2E37EA63AAD84B117.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow Tabular";
+    font-weight: 500;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/211D96B8333D9C07D.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/211D96B8333D9C07D.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Gotham Narrow Tabular";
+    font-weight: 700;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/4419A18C70C1F3F99.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/4419A18C70C1F3F99.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 400;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/12C383965421BC56F.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/12C383965421BC56F.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 400;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/A337D217BCC8D423B.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/A337D217BCC8D423B.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 600;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/9C7F15704715916A9.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/9C7F15704715916A9.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 600;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/0DC8308772B377296.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/0DC8308772B377296.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 700;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/FE06BBF4C91F72FCC.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/FE06BBF4C91F72FCC.woff") format("woff");
+}
+
+@font-face {
+    font-family: "Mercury Display";
+    font-weight: 700;
+    font-style: italic;
+    font-display: block;
+    src: url("clientlib-usaa-dependencies/resources/fonts/FD370A3AF55491C4B.woff2") format("woff2"), url("clientlib-usaa-dependencies/resources/fonts/FD370A3AF55491C4B.woff") format("woff");
+}
+
+/*
+keeping original url for future reference:
+"https://content.usaa.com/mcontent/static_assets/Fonts/FD370A3AF55491C4B.woff2"
+ */
