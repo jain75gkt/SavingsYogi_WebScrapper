@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryScreenData ContentHash="Rc_oMVfTwUqw8226TqAREw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryScreenData.Data>
+    <TargetApp x:Key="TargetApp" Area="0, 0, 0, 0" Selector="&lt;wnd app='msedge.exe' cls='#32770' title='Save As' /&gt;" Url="chase.com/personal/savings/bank-cd" />
+  </ObjectRepositoryScreenData.Data>
+</ObjectRepositoryScreenData>

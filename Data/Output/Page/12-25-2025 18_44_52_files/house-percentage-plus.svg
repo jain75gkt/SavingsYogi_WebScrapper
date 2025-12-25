@@ -1,0 +1,27 @@
+
+
+
+  <svg width="48" height="48" view-box="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" >
+    <rect x="26" y="26" width="14" height="14" rx="2" stroke="#0079C1" stroke-width="2" />
+    <path d="M33 30V36" stroke="#0079C1" stroke-width="2" stroke-linecap="round" />
+    <path d="M36 33L30 33" stroke="#0079C1" stroke-width="2" stroke-linecap="round" />
+    <path
+      d="M23 37H10C9.44772 37 9 36.5523 9 36V16.9538C9 16.6654 9.12448 16.3911 9.3415 16.2012L20.3415 6.57619C20.7185 6.24629 21.2815 6.24629 21.6585 6.57619L33 16.5"
+      stroke="#0079C1"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+    <path d="M33 16.5V22" stroke="#0079C1" stroke-width="2" stroke-linecap="round" />
+    <path d="M21 6L5 20" stroke="#0079C1" stroke-width="2" stroke-linecap="round" />
+    <path d="M21 6L37 20" stroke="#0079C1" stroke-width="2" stroke-linecap="round" />
+    <path d="M16 30L25 20" stroke="#0075BE" stroke-width="2" stroke-linecap="round" />
+    <circle cx="17" cy="21" r="2" stroke="#0079C1" stroke-width="2" />
+    <path
+      d="M23.0252 26.9009C22.5958 27.0925 22.2318 27.4355 22.0212 27.8969C21.8107 28.3584 21.7903 28.8581 21.9271 29.308"
+      stroke="#0079C1"
+      stroke-width="2"
+      stroke-linecap="round"
+    />
+  </svg>
+
+

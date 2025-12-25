@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryScreenData ContentHash="W10w1ui5w0qavVe074Tl2Q" Reference="wmoQtc-7M02aRki2x1FIUw/vvQISmK0C0yjCFU4Md85-A" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:p="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryScreenData.Data>
+    <TargetApp x:Key="TargetApp" Area="-9, -9, 1938, 1038" BrowserType="Edge" ContentHash="W1leV8hzmUWaCeILM40VKw" IconBase64="iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAALeSURBVDhPndNJSFRxHAfw6SDBe+OSy7xt3syL6BCo01hpQhuRRYeQEnJJ00qtzCUrM7NFU1PU0jLTXCeipENIh4iKiASJUgiJ8lK26aizNPvyDvGNeT5F69bhC+/wPr8Ffn8FgGWLUxdNrGmKJqrbYolX3TriY5+O/NCnJ5/1xJHlfRuU/N//K+Y/aqOJoMYYor5bR3oG40i83qjE6NYQjO0Iw1hSGEa3h+LlpmDrg/XKkn8K1EUTQc0xxKOBtSSGEpUY37UC3/ZG4ud+FabSVDCmqzCdQWE6XYXP+yIwnBRas6RAUwxR/1BP4t3mYEwkR2AyVYXJNBWm0gOhMJVBwZhJYSabgjmXhimXwo+cqFSpQEMskXhPT/4e2RKC7ymRMpqDxkDXTArT2RRmD1Mw5dMwF9CwFjOwnWbM9nJGq7ihI9ufJyjxNTlCAlI3Gc4cpDB7iIIpj4b5OA1LEYNfJxnYyhjYKhg4LrGlii49OTyyLRTGwK4HZJglw1wK5mM0LIUyPMPAdo6B4wILZzUHZ536vuLuOuX78d0rJDSdRWMmh4LpCAXzURqWEwysJdK4sJUzsFeycFRxcNZycDWo4W7mnyq648PfTCSHw3SIhukwDXM+DUsBA2tg3FIGtrMM7OdZOC5zcNZwcNWr4W7i4Wnh4b3JDyj640M6JlIiYAl0DOy5aFx7BQvHRRbOKxxcV9VwN/LwXJcgfO0a+Du1ZYreBHLrp5Rw2IpYeVwW9nJ2YU9X3SJ4QwPfLQnC3y2I/h5htXQHQ3tCnzhOMXOwkoWzioOrloO7gYfnGg9vqww7tPB3CRB7BYj9QtvCIQ3uDOGNxfQXdwDWcHDXq+Fp5uFt0cDXpoHvtgb+Lu08hGgQ3ooGIXjJW5goZFd5G/hhT6MMb8rwjhZizwIM5LFoEKKWnPJ8fE38cm+rJs/Xrhn2d2qtYo9gFftXWkWDYBYNwgvRIEjnuzhLCvxP/gC342hQD3gNBAAAAABJRU5ErkJggg==" Reference="wmoQtc-7M02aRki2x1FIUw/vvQISmK0C0yjCFU4Md85-A" Selector="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" Url="[in_TransactionItem(&quot;CD page&quot;).ToString]" Version="V2">
+      <TargetApp.Arguments>
+        <p:InArgument x:TypeArguments="x:String" />
+      </TargetApp.Arguments>
+      <TargetApp.WorkingDirectory>
+        <p:InArgument x:TypeArguments="x:String" />
+      </TargetApp.WorkingDirectory>
+      <imageRef attrName="InformativeScreenshot" originalValue="d837aa4aece222547ad7e2b2686e4a59.jpg" xmlns="">0jJTZ0mlL9kWPjO1Fif2tQw</imageRef>
+    </TargetApp>
+    <scg:List x:TypeArguments="ObjectRepositoryVariableData" x:Key="Variables" Capacity="1" />
+  </ObjectRepositoryScreenData.Data>
+</ObjectRepositoryScreenData>

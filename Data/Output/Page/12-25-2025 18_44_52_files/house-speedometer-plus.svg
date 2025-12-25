@@ -1,0 +1,67 @@
+<svg
+  width="48"
+  height="48"
+  view-box="0 0 48 48"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <rect
+    x="26"
+    y="26"
+    width="14"
+    height="14"
+    rx="2"
+    stroke="#0079C1"
+    stroke-width="2"
+  />
+  <path
+    d="M33 30V36"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M36 33L30 33"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M23 37H10C9.44772 37 9 36.5523 9 36V16.9538C9 16.6654 9.12448 16.3911 9.3415 16.2012L20.3415 6.57619C20.7185 6.24629 21.2815 6.24629 21.6585 6.57619L33 16.5"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M33 16.5V22"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M21 6L5 20"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M21 6L37 20"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M14 24.5C14 20.3579 17.3579 17 21.5 17C24.9495 17 27.8551 19.3288 28.7304 22.5"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+  <circle cx="22" cy="25" r="1" stroke="#0079C1" stroke-width="2" />
+  <path
+    d="M20 21L22 25"
+    stroke="#0079C1"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

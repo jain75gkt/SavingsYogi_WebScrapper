@@ -1,0 +1,102 @@
+.cdzipinput .active .label-text,
+.cdzipinput .input-box .focused {
+  font-size: .75rem;
+  transform: translate(0,-.75rem)
+}
+.cdzipinput .label-text {
+  transition: .3s ease-in-out;
+  background-color: transparent;
+  position: absolute;
+  font-size: 1rem
+}
+.cdzipinput .input-label {
+  background-color: transparent;
+  position: relative;
+  border-radius: .25rem;
+  outline-offset: .25rem;
+  margin: 0 -.5rem .25rem;
+  padding: 0 .5rem;
+  width: 100%
+}
+.cdzipinput .error,
+.cdzipinput .messages {
+  color: #cf2a36
+}
+.cdzipinput .error .active-border {
+  border: 2px solid #cf2a36
+}
+.cdzipinput .error .input-box .input-field {
+  border-bottom: 1px solid #cf2a36
+}
+.cdzipinput .active-border {
+  border: 2px solid #235ae4
+}
+.cdzipinput .input-box {
+  margin: 1rem 0 0;
+  position: relative;
+  padding: .1875rem
+}
+.cdzipinput .input-box .input-field {
+  border: none;
+  width: 100%;
+  border-bottom: 1px solid #7a7a95;
+  padding: 0 0 .25rem;
+  border-radius: 0;
+  font-size: 1rem
+}
+.cdzipinput .input-box .input-field:focus {
+  outline: 0;
+  border-bottom: 1px solid #235ae4
+}
+.cdzipinput .input-box .clear-zip {
+  border: 0;
+  height: 1rem;
+  outline: 0;
+  opacity: 1;
+  right: 0;
+  position: absolute;
+  text-align: center;
+  width: 1rem;
+  padding: .5rem
+}
+.cdzipinput .input-box .clear-zip:focus {
+  outline: #235ae4 solid .125rem
+}
+.cdzipinput .input-box svg {
+  height: 1rem;
+  left: 0;
+  top: 0;
+  fill: #484861;
+  position: absolute;
+  width: 1rem
+}
+.cdzipinput .error-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  position: relative;
+  font-size: .875rem
+}
+.cdzipinput .zip-errors {
+  display: flex;
+  position: relative;
+  padding: .125rem 0
+}
+.cdzipinput svg.warning {
+  position: relative;
+  display: none;
+  top: .125rem;
+  margin-right: .5rem;
+  fill: #cf2a36;
+  width: 1rem;
+  height: 1rem
+}
+.cdzipinput .messages .input-zip-validate,
+.cdzipinput .messages .service-down,
+.cdzipinput .messages .valid-zip {
+  display: none
+}
+.cdzipinput .button-container {
+  display: flex;
+  align-items: center
+}

@@ -1,0 +1,1 @@
+Bootstrapper.bindDOMLoaded(function(){var Bootstrapper=window["Bootstrapper"];var ensightenOptions=Bootstrapper.ensightenOptions;Bootstrapper.loadScriptCallback("https://c.tvpixel.com/js/current/dpm_pixel_min.js?aid\x3dciti-d4f85824-1351-4554-91ff-fdb56f962c5c\x26comscore\x3dtrue",function(){(function(){}).call(window)})},4202701,685268);

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="xaC075fjBkSG0O7CGZ0avA" Reference="wmoQtc-7M02aRki2x1FIUw/sPFymjLMYUOgYCPyuz9TmA" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="mtb.com/personal/personal-banking/savings-account-and-cd-options/certificates-of-deposit-accounts" CVScreenId="4845e3bf-b80c-48e9-ae9b-d095d15d9599" CvElementArea="685, 453, 227, 52" CvType="InputBox" DesignTimeRectangle="687, 453, 224, 50" ElementType="InputBox" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" FuzzySelectorArgument="&lt;webctrl tag='INPUT' maxlength='5' /&gt;" Guid="2b441121-52a4-49af-9c3f-177c98d9451f" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificates of Deposit (CDs) Accounts &amp;amp; Interest Rates | M&amp;amp;T Bank' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Complete]">
+      <imageRef attrName="InformativeScreenshot" originalValue="9875343af0cfac9c8875fd14ebd5b1fb.png" xmlns="">0B5paX5o7qEqS0zOmLJ59rg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">TypeInto</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

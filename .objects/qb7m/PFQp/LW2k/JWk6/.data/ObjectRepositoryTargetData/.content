@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="HHZVo-KLpUehSEFMv-oFHA" Reference="wmoQtc-7M02aRki2x1FIUw/JWk6iHf7u0O4DDNSTHN4CA" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="discover.com/online-banking/cd" CVScreenId="cec1f362-450c-46af-9670-1c260bb413d0" CvTextArea="664, 799, 111, 35" CvTextArgument="3.75%" CvType="Text" DesignTimeRectangle="668, 791, 113, 52" ElementVisibilityArgument="[UiPath.UIAutomationNext.Enums.NElementVisibility.Visible]" FullSelectorArgument="&lt;webctrl class='cd-rate' idx='5' parentid='responsive' tag='SPAN' /&gt;" Guid="238d12fa-d420-438f-8585-c78730eff70d" IsResponsive="True" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <imageRef attrName="InformativeScreenshot" originalValue="193ec9b869e89a3d17a2068c438cb12e.png" xmlns="">00LrfePT_00uRq6B8UQWgjA</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">TakeScreenshot</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>
