@@ -1,0 +1,5032 @@
+//tealium universal tag - utag.loader ut4.49.202511210110, Copyright 2025 Tealium.com Inc. All Rights Reserved.
+
+var utag_condload=false;window.__tealium_twc_switch=false;try{ try{
+  /** @license Copyright 2016 Bank of America, N.A. All rights reserved. */
+
+/**
+ * @fileoverview Bank of America IBM Digital Analytics data collection library.
+ *
+ * @requires window.digitalData
+ * @requires eluminate.js
+ * @requires cmdatatagutils.js
+ *
+ * This library is used to manage core aspects of the digitalData object and to capture
+ * digital analytics events and send them to Coremetrics. The primary events to capture
+ * are pageview, manual link clicks, custom errors, and application conversion events.
+ *
+ * This library can also be used to maintain an accurate history of the current pageID
+ * for single page application via the digitalData.page.attributes.pageIDHistory array.
+ *
+ * Example #1:
+ * Pageview on the default pageInfo array object.
+ *
+ *      bactm.pageview();
+ *
+ * Example #2:
+ * Pageview on pageInfo object found at array index 5, passing in additonal segments
+ * and selecting to utilize digitalData.page.category.addlCategory as the category.
+ *
+ *      bactm.pageview(5, { segments: ['olbc_N', 'st_NC'], categoryType: 'additional' });
+ *
+ * Example #3:
+ * Application pageview on pageInfo object found at array index 2.
+ *
+ *      bactm.pageview(2, { isApp: true });
+ *
+ * Example #4:
+ * Pageview for pageInfo object that has pageID matching: 'this_is:my:PageID'
+ *
+ *      bactm.pageview('this_is:my:PageID');
+ *              OR
+ *      bactm.pageview('this_is:my:PageID', { lookupType: 'pageID' });
+ *
+ * Example #5:
+ * Pageview for pageInfo object that matches the pageID found in the
+ * utag_data.Dynamic_PageView_Element Tealium lookup table, with a matching associated
+ * value of: 'SomeValue'
+ *
+ *      bactm.pageview('SomeValue', { lookupType: 'associatedValue' });
+ *
+ * All event helper functions within this library, will utilize the dataCollector
+ * queue to allow data collection events to being to be collected immediately
+ * and sent to Coremetrics as the queue is processed as soon as the main Coremetrics
+ * libraries are loaded and ready.
+ *
+ * The dataCollector is a shared queue of objects holding generic information
+ * about the event. It uses a queue so that the page can record events before the
+ * main Coremetrics libraries are loaded.
+ *
+ * For example, a page might start with the following dataCollector in its head section:
+ *
+ *      window.dataCollector = window.dataCollector || [];
+ *      dataCollector.push({
+ *          'event'                 : 'pageview',
+ *          'pageInfoArrayIndex'    : 1,
+ *          'options'               : {
+ *              'isApp'             : false
+ *          }
+ *      });
+ *
+ * The queue will then be processed and events sent to Coremetrics once the main
+ * Coremetrics libraries are ready.
+ *
+ * @author jeremy.hodges@bankofamerica.com (Jeremy Hodges)
+ */
+
+(function (name, context, definition) {
+  // Check if is used inside a "modern" browser, if not, return
+  if (!context || !Array.prototype.filter) {
+    return;
+  }
+
+  context[name] = definition();
+})('bactm', typeof window !== 'undefined' ? window : null, function () {
+
+  // Initial variable configurations
+  var win = window
+    , doc = document || {}
+    , version = '3.0.0'
+    , plugins = {}
+    , publishedEvents = {}
+    , queuedEvents = {}
+    , env = win.bactm_envSelector || 'notprod'
+    , utagLoadStopped = false
+    , isDOMReady = false
+    , readyHandlers = []
+    , loadCoremetrics = false
+    , pageviewOnLoad = typeof digitalData !== 'undefined' && (typeof digitalData.disable_pageviewonload === 'undefined' || digitalData.disable_pageviewonload === null || digitalData.disable_pageviewonload.toString().toLowerCase() !== 'true')
+    , isProd = env === 'prod' ? true : false
+    , cmLibLoadEventName = 'bactm_libload'
+    , attrValueSeperator = '-_-'
+    , segmentWrapperChar = '|'
+    , segmentValueSeperator = segmentWrapperChar + segmentWrapperChar
+    , storageKeyPrefix = 'bactm.'
+    , logQ = []
+    , _logPageviewToSplunk = {
+      'homepage:Content:Personal;homepage_personal': true
+      , 'homepage:Content:Personal;homepage_personal_signoff': true
+    }
+    , conversionActionTypes = {
+      'initiate': 1
+      , 'complete': 2
+    }
+    , SITE_PROMOTIONS_INTERVAL = 300
+    , SITE_PROMOTIONS_THRESHOLD = 3000
+    , SITE_PROMOTIONS_ACCUMULATOR = 0
+    , LOG_LEVEL = {
+      OFF: 10
+      , FATAL: 5
+      , ERROR: 4
+      , WARN: 3
+      , INFO: 2
+      , DEBUG: 1
+    }
+    , LOG_LEVEL_STRINGS = {
+      5: 'trace'
+      , 4: 'error'
+      , 3: 'warn'
+      , 2: 'info'
+      , 1: 'log'
+    }
+    , _settings = {
+      logLevel: isProd ? LOG_LEVEL.OFF : LOG_LEVEL.DEBUG,
+      coremetricsUtagId: 1
+    }
+    , modals = [
+      'Ent:Mkt:Survey;Convergys_open',
+      'Ent:Mkt:Survey;Convergys_complete',
+      'MDA:CONTENT:DEALS;INTRODUCING_COINS_MODAL',
+      'MDA:CONTENT:DEALS;LOCATIONCONSENTMODAL',
+      'MDA:CONTENT:DEALS;HOW_COINS_WORK_MODAL',
+      'OLB:CONTENT:ACCTDETAILS:CARD;THREEPERCENTSASIMODALNEW',
+      'OLB:TOOL:ACCTDETAILS:HEMI;PORTAL_ELECTRONIC_COSENT_CHANGE_DELIVERY_PREFERENCES_MODAL',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_HOW_COINS_WORK_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ONBOARDING_MODAL',
+      'OLB:CONTENT:ACCTDETAILS:CARD;THREEPERCENTSASIMODALEXISTING',
+      'OLB:TOOL:ACCTDETAILS;EDIT_CATEGORY_MODAL',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_INTRODUCING_COINS_MODAL',
+      'MDA:CONTENT:DEALS;INTRODUCING_COINS_MODAL_ES',
+      'OLB:TOOL:FINWELL;EDIT_CATEGORY_MODAL',
+      'MDA:CONTENT:DEALS;HOW_LEVELS_WORK_MODAL',
+      'MDA:CONTENT:BILLPAY;SUCCESS_CANCEL_PREV_SCHED_PMNT_MODAL',
+      'MDA:CONTENT:MYCONTACTINFO;DELETEPHONEMODAL',
+      'OLB:CONTENT:FINWELL;CREATE_NEW_GOAL_MODAL',
+      'GWM:MKT:MERRILLEDGE;ACCOUNT-SELECTOR-MODAL-MOBILE',
+      'MDA:CONTENT:DEALS;ALLOWLOCATIONMODAL',
+      'OLB:TOOL:ACCTDETAILS:HEMI;PORTAL_ESIGN_MODAL',
+      'MDA:CONTENT:DEALS;LOCATIONCONSENTMODAL_ES',
+      'GWM:MKT:MERRILLEDGE;ACCOUNT-SELECTOR-MODAL-DESKTOP',
+      'OLB:CONTENT:CUSTSVC:HEMI;LATECHARGE_MODAL',
+      'OLB:TOOL:ACCTDETAILS:HEMI;PORTAL_MESSAGES_MODAL',
+      'OLB:CONTENT:FINWELL;SET_BUDGET_MODAL',
+      'DEP:APP:CDP;CDP:800:TIMEOUT_MODAL',
+      'CARDS:APP:SP;CARD_SP_EC:800:TIMEOUT_MODAL',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_CASH_IN_COINS_MODAL',
+      'SMBUS:APP:CARD;SMBUS:CARD:800:TIMEOUT_MODAL',
+      'OLB:CONTENT:ACCOUNTS:OPS;BOL_SECURE_LOG_IN_MODAL',
+      'MDA:CONTENT:DEALS;HOW_COINS_WORK_MODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;SELECT_ACCOUNTS_MODAL',
+      'GWM:MKT:MERRILLEDGE;ACCOUNT-SELECTOR-MODAL-RETIREMENT-MOBILE',
+      'OLB:CONTENT:FINWELL;MOVE_MONEY_MODAL',
+      'DEP:APP:CDP;CDP_NONOLB:105:CANCELMODAL',
+      'MDA:CONTENT:BILLPAY;PAYEE_EDIT_CONFIRMATION_MODAL',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_COINS_RESET_MODAL_ES',
+      'GWM:MKT:MERRILLEDGE;ACCOUNT-SELECTOR-MODAL-RETIREMENT-DESKTOP',
+      'MDA:CONTENT:DEALS;NEARMEMAPNODEALSAVAILABLEMODAL',
+      'CARDS:APP:SP;CARD_SP:800:TIMEOUT_MODAL',
+      'CARD:APP:ICE;ICEPOS_NONOLB:175:RETURN_TO_DASHBOARD_MODAL',
+      'MDA:CONTENT:LOCATIONS;LOCATIONDISABLEDPROMPTMODAL',
+      'MDA:CONTENT:MYCONTACTINFO;DELETEEMAILMODAL',
+      'MDA:CONTENT:BILLPAY;PAYTOACCOUNTEDITCONFIRMMODAL',
+      'MDA:CONTENT:DEALS;HOW_LEVELS_WORK_MODAL_ES',
+      'MDA:CONTENT:DEALS;BONUS_COIN_DETAILS_MODAL',
+      'MDA:CONTENT:PAYPAL;IPAD_MODAL',
+      'GWM:MKT:MERRILLEDGE;GLOBAL-OAO-BROKERAGE-MODAL',
+      'DFS:APP:ALP;ALP_OLB:105:CANCELMODAL',
+      'HL:APP:HELOC;HELOC:800:TIMEOUT_MODAL',
+      'MDA:CONTENT:DEALS;ALLOWLOCATIONMODAL_ES',
+      'DFS:APP:ALP;ALP_NONOLB:105:CANCELMODAL',
+      'OLB:CONTENT:FINWELL;EDIT_GOAL_MODAL',
+      'MDA:CONTENT:BILLPAY;PAYTOACCOUNTDELETEMODAL',
+      'OLB:CONTENT:FINWELL;MANAGE_ACCOUNTS_MODAL',
+      'OLB:CONTENT:ACCTDETAILS:CARD;INFOSVCS_CARD_REPLACE_AD_ACCT_SELECT_MODAL',
+      'SMBUS:APP:CARD;SBCC_EC:800:TIMEOUT_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ALERTS_DETAILS_MODAL',
+      'DFS:APP:ALP;ALP_FC:105:CANCELMODAL',
+      'MDA:CONTENT:BILLPAY;SUCCESS_CANCEL_PREV_SCHED_PMNT_MODAL_ES',
+      'OLB:CONTENT:ACCTDETAILS:CARD;INFOSVCS_CARD_REPLACE_NO_ELIGIBLE_ACCTS_MODAL',
+      'MDA:CONTENT:DEALS;ALLOWLOCATIONSOMETHIGNWRONGMODAL',
+      'OLB:CONTENT:ACCTDETAILS;TRANSFERS_MAKE_PAYMENT_MODAL',
+      'OLB:CONTENT:FINWELL;DELETE_GOAL_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;JUMP_TO_DATE_CALENDAR_MODAL',
+      'OLB:CONTENT:ACCOUNTS;TRANSFERS_MAKE_PAYMENT_MODAL',
+      'GWM:MKT:MERRILLEDGE;RMD-MODAL',
+      'HL:APP:DMA_REFI;DMAR_OLB:275:COUNTY_MODAL',
+      'MDA:CONTENT:MYCONTACTINFO;DELETEPHONEMODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ONBOARDING_MODAL_ES',
+      'GWM:MKT:MERRILLEDGE;MARKETPRO-VIDEO-MODAL',
+      'HL:APP:HELOC;HELOC_OLB:105:CANCELMODAL',
+      'SMBUS:APP:DEP;SB_DEP_NONOLB:105:CANCELMODAL',
+      'OLB:CONTENT:FINWELL;CONTRIBUTE_TO_GOAL_MODAL',
+      'GWM:MKT:MERRILLEDGE;WHAT-YOU-WILL-NEED-MODAL',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_HOW_COINS_WORK_MODAL_ES',
+      'OLB:CONTENT:FINWELL;CREATE_NEW_GOAL_MODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ADD_A_PROJECTED_TRANSACTION_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;EXPORT_CHART_DATA_MODAL',
+      'HL:APP:HELOC;HELOC_NONOLB:105:CANCELMODAL',
+      'OLB:CONTENT:ACCOUNTS;TRANSFERS_ADD_AN_ACCT_MODAL',
+      'GWM:MKT:MERRILLEDGE;ONLINE-TRADING-MODAL-RESEARCH',
+      'MDA:CONTENT:DEALS;ALLOWLOCATIONSOMETHIGNWRONGMODAL_ES',
+      'MDA:CONTENT:LOCATIONS;LOCATIONDISABLEDPROMPTMODAL_ES',
+      'MDA:CONTENT:DEALS;NEARMEMAPNODEALSAVAILABLEMODAL_ES',
+      'OLB:CONTENT:ACCTDETAILS;TRANSFERS_ADD_AN_ACCT_MODAL',
+      'SMBUS:APP:CARD;SB_ULOAN_OLB:105:CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;ONLINE-TRADING-MODAL-GUIDANCE',
+      'HL:APP:DMA_REFI;DMAR_NONOLB:275:COUNTY_MODAL',
+      'MDA:CONTENT:BILLPAY;EXTERNALACCOUNTDELETEMODAL',
+      'OLB:CONTENT:FINWELL;SET_BUDGET_MODAL_ES',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_INTRODUCING_COINS_MODAL_ES',
+      'GWM:MKT:MERRILLEDGE;GLOBAL-OAO-INHERITED-IRA-MODAL',
+      'MDA:CONTENT:BILLPAY;PAYEE_EDIT_CONFIRMATION_MODAL_ES',
+      'MDA:CONTENT:BILLPAY;PAYTOACCOUNTEDITCONFIRMMODAL_ES',
+      'OLB:TOOL:FINWELL;EDIT_CATEGORY_MODAL_ES',
+      'OSP:TOOL:TRANSFERS;ADD_AN_ACCT_MODAL',
+      'DEP:APP:CDP;CDP_NONOLB:130:OOW_CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;ONLINE-TRADING-MODAL-STAY-ON-TRACK',
+      'MDA:CONTENT:MYCONTACTINFO;DELETEEMAILMODAL_ES',
+      'DFS:APP:ALP;ALP_CC:105:CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;FUND-IN-ONE-OF-FOUR-WAYS-MODAL',
+      'GWM:MKT:MERRILLEDGE;ONLINE-TRADING-MODAL-PERFORMANCE',
+      'OLB:CONTENT:FINWELL;MARK_GOAL_COMPLETE_MODAL',
+      'OSP:APP:FINWELL;FWA_MODAL',
+      'GWM:MKT:MERRILLEDGE;529-COMPARE-MODAL',
+      'GWM:MKT:MERRILLEDGE;QUOTE-HOVER-MODAL',
+      'MDA:CONTENT:DEALS;BONUS_COIN_DETAILS_MODAL_ES',
+      'DFS:APP:ALP;ALP_OLB_SNR:105:CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;PREFERRED-REWARDS-MODAL',
+      'GWM:MKT:MERRILLEDGE;SELECT-FUND-RESEARCH-MODAL',
+      'OLB:CONTENT:FINWELL;COMPLETED_GOALS_MODAL',
+      'GWM:MKT:MERRILLEDGE;GLOBAL-OAO-RETIREMENT-CASH-MGMT-MODAL',
+      'GWM:MKT:MERRILLEDGE;RUN_ECMS_MODAL',
+      'HL:APP:DMA_PURCH;DMAP_NONOLB:260:COUNTY_MODAL',
+      'OSP:TOOL:LIFEPLAN;APPT_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;SELECT_ACCOUNTS_MODAL_ES',
+      'GWM:MKT:MERRILLEDGE;ADVERTISING-PRACTICES-MODAL',
+      'GWM:MKT:MERRILLEDGE;BEST-EXECUTION-TRADING-MODAL',
+      'GWM:MKT:MERRILLEDGE;CHOOSE-YOUR-OWN-SEARCH-CRITERIA-MODAL',
+      'GWM:MKT:MERRILLEDGE;CONTRIBUTION-LIMIT-MODAL',
+      'GWM:MKT:MERRILLEDGE;PRICING-MODAL',
+      'GWM:MKT:MERRILLEDGE;SEARCH-FOR-ETFS-MODAL',
+      'MDA:CONTENT:BILLPAY;PAYTOACCOUNTDELETEMODAL_ES',
+      'MDA:CONTENT:DEALS;NEARMEMAPOPTEDOUTMODAL',
+      'OSP:TOOL:LIFEPLAN;CREATE_A_GOAL_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;LOW_NEGATIVE_ALERTS_MODAL',
+      'DEP:APP:CDP;CDP_OLB:105:CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;ACADEMY-VIDEO-MODAL',
+      'GWM:MKT:MERRILLEDGE;BROKER-CHECK-MODAL',
+      'GWM:MKT:MERRILLEDGE;FUND-IN-ONE-OF-FOUR-WAYS-MODAL_V2',
+      'GWM:MKT:MERRILLEDGE;SEARCH-FOR-FIXED-INCOME-MODAL',
+      'HL:APP:DMA_PURCH;DMAP_OLB:260:COUNTY_MODAL',
+      'OLB:CONTENT:ACCOUNTS;TRANSFERS_MAKE_PAYMENT_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ADJUST_BALANCE_ALERTS_MODAL',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ALERTS_DETAILS_MODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;JUMP_TO_DATE_CALENDAR_MODAL_ES',
+      'DEP:APP:CDP;CDP_NONOLB_SNR:105:CANCELMODAL',
+      'GWM:MKT:MERRILLEDGE;CARD-ELIGIBILITY-GUIDELINES-MODAL',
+      'GWM:MKT:MERRILLEDGE;FINANCES-VIDEO-MODAL',
+      'GWM:MKT:MERRILLEDGE;HEALTH-VIDEO-MODAL',
+      'GWM:MKT:MERRILLEDGE;IRA-SELECTOR-TOOL-MODAL',
+      'GWM:MKT:MERRILLEDGE;JUGGLING-RETIREMENT-SAVING-VIDEO-MODAL',
+      'GWM:MKT:MERRILLEDGE;PRICING-MODAL-MOBILE',
+      'GWM:MKT:MERRILLEDGE;ROTH-IRA-CONVERSION-MODAL-WHAT-YOU-NEED',
+      'GWM:MKT:MERRILLEDGE;RUN_NEWECMSMODAL',
+      'GWM:MKT:MERRILLEDGE;SB401K-VIDEO-MODAL',
+      'GWM:MKT:MERRILLEDGE;SMALL-BUSINESS-VIDEO-MODAL',
+      'HL:APP:HELOC;HELOC_NONOLB_SNR:105:CANCELMODAL',
+      'HL:APP:HELOC;HELOC_OLB_SNR:105:CANCELMODAL',
+      'MDA:CONTENT:PAYPAL;IPAD_MODAL_ES',
+      'OLB:CONTENT:ACCOUNTS;TRANSFERS_ADD_AN_ACCT_MODAL',
+      'OLB:CONTENT:FINWELL;CONTRIBUTE_TO_GOAL_MODAL_ES',
+      'OLB:CONTENT:FINWELL;EDIT_GOAL_MODAL_ES',
+      'OLB:CONTENT:FINWELL;MANAGE_ACCOUNTS_MODAL_ES',
+      'OLB:CONTENT:FINWELL;MOVE_MONEY_MODAL_ES',
+      'OSP:CONTENT:CONCOM:TOFFERS;CASHCOUPONS_CASH_IN_COINS_MODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;ADD_A_PROJECTED_TRANSACTION_MODAL_ES',
+      'SMBUS:TOOL:BUSINESSADVANTAGE360;LOW_NEGATIVE_ALERTS_MODAL_ES'
+    ];
+
+
+  // ===========================================================================
+  // Functions fired on page load.
+  // ===========================================================================
+
+  /**
+   * The initialization function is called immediately when the script loads. If loadCoremetrics
+   * is false, this function will NOT be called.
+   * @private
+   * @returns {void}
+   */
+  var _init = function () {
+    _log('bactm library v' + version + ' initializing.', LOG_LEVEL.INFO);
+    win.dataCollector = win.dataCollector || [];
+    
+    getCelebrusContentKey();
+
+    _ready(_onLoad);
+    // If we haven't disabled the initial pageview on load in the DDO, go ahead and
+    // queue up a pageview for the default instance.
+    if (pageviewOnLoad) pageview();
+
+    // Add event listener to send a beacon with log data once the window unloads.
+    var eventName = 'onpagehide' in window ? 'pagehide' : 'beforeunload';
+    window.addEventListener(eventName, _sendLogBeacon, false);
+
+    _processSitePromotions();
+    _setPrivacy();
+  };
+
+  Object.defineProperty(Array.prototype, "includes", {
+    enumerable: false,
+    value: function (obj) {
+      var newArr = this.filter(function (el) {
+        return el == obj;
+      });
+      return newArr.length > 0;
+    }
+  });
+
+  /**
+   * Queries the DOM every 300ms for up to 3s in order to detect all
+   * site promotions and adds them to the data collector.
+   */
+  var _processSitePromotions = function () {
+    var querySitePromotions = setInterval(function () {
+      if (SITE_PROMOTIONS_ACCUMULATOR > SITE_PROMOTIONS_THRESHOLD) {
+        _trigger('sitePromotionsProcessed');
+        return clearInterval(querySitePromotions);
+      }
+
+      var links = polyfills.array.from(document.querySelectorAll('a'));
+      var sitePromotionLinks = links.filter(function (link) {
+        if (typeof link.dataset.impressionhref !== "undefined") {
+          return polyfills.string.includes(link.dataset.impressionhref, 'cm_sp=');
+        } else {
+          return link?.attributes?.href?.value?.includes('cm_sp=');
+        };
+      });
+
+      sitePromotionLinks.forEach(function (spLink) {
+        function chooseLink() {
+          if (typeof spLink.dataset.impressionhref !== "undefined") {
+            return [new QueryString(spLink.dataset.impressionhref), spLink.dataset.impressionhref]
+          } else {
+            return [new QueryString(spLink?.attributes?.href?.value), spLink?.attributes?.href?.value]
+          }
+        }
+
+        var sitePromotion = {
+          event: 'sitepromotion',
+          options: {
+            value: chooseLink()[0].get('cm_sp'),
+            href: chooseLink()[1]
+          }
+        };
+
+        if (!_isInDataCollector(sitePromotion)) dataCollector.push(sitePromotion)
+      });
+
+      SITE_PROMOTIONS_ACCUMULATOR += SITE_PROMOTIONS_INTERVAL;
+    }, SITE_PROMOTIONS_INTERVAL);
+  }
+
+  /**
+   * Determines if an object is in the datacollector.
+   */
+  _isInDataCollector = function (needle) {
+    if (typeof needle !== 'object') return false;
+
+    var dc = window.dataCollector || [];
+    for (var i = 0; i < dc.length; i++) {
+      var dcEvent = dc[i];
+      if (_is(dcEvent, needle)) return true;
+    }
+
+    return false;
+  };
+
+  /**
+   * Determines if two objects have the same keys and values.
+   */
+  _is = function (o1, o2) {
+    if (typeof o1 !== 'object' || typeof o2 !== 'object') return false
+
+    var o1k = Object.keys(o1);
+    return o1k.every(function (key) {
+      if (!o2.hasOwnProperty(key)) return false;
+
+      if (typeof o1[key] === 'object') return _is(o1[key], o2[key])
+
+      return o1[key] === o2[key]
+    });
+  };
+
+
+  /**
+   * Called once the custom event named in cmLibLoadEventName is dispatched and the
+   * DOM is fully ready.
+   * @private
+   * @returns {void}
+   */
+  var _onLoad = function () {
+    // Intialize our dataCollector queue and tell it to process anything already in the queue.
+    win.dataCollector = win.dataCollector || [];
+    var dataCollectorQueue = new _dataCollectorHelper(win.dataCollector, _processDataCollector, true);
+
+    if (typeof win.bactm_fireImpressions === 'boolean' && win.bactm_fireImpressions === true)
+      _impressions();
+  }
+
+  // ===========================================================================
+  // End functions fired on page load.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Core data collection functions.
+  // ===========================================================================
+
+  /**
+   * Fires a Coremetrics pageview tag for the pageInfo object requested according
+   * to and modified if necessary based on properties in the options object.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string|number} [pageInfoKey] - Value indicating how to find the pageInfo
+   *      from the digitalData object. Can be the index of the array, pageID, or the
+   *      associated value.
+   * @param {object} [options] - Object of options for this pageview call. Valid
+   *      properties include segmentValues {array}, categoryType {string}, lookupType {string},
+   *      isSaveAndReturn {bool}, saveAndReturnId {string}, applicationId {string}
+   *      cartProducts {array} and isApp {bool}.
+   * @returns {boolean}
+   */
+  var _firePageview = function (pageInfoKey, options) {
+    var options = options || {}
+      , pageInfoArrayIndex = _lookupArrayIndexByKey(pageInfoKey, options);
+
+    _processOptions(pageInfoArrayIndex, options);
+
+    _log('Call pageview on array index ' + pageInfoArrayIndex + ' with options: ', options, LOG_LEVEL.DEBUG);
+
+    if (_toLowerCaseString(ddo.get('page.attributes.stateCookie')) === 'true') _setStateSegmentValue(pageInfoArrayIndex);
+    if (_toLowerCaseString(ddo.get('page.attributes.needOLBcookie')) === 'true') _setOLBSegmentValue(pageInfoArrayIndex);
+    if (_toLowerCaseString(ddo.get('user.sharedIDs.celebrus')) !== null) _setSegmentValue('cck', ddo.get('user.sharedIDs.celebrus'), pageInfoArrayIndex);
+    _setWindowResolutionSegmentValue(pageInfoArrayIndex);
+    _setSNRSegmentValue(pageInfoArrayIndex);
+    // _setmdaCmParams();
+
+    var pageInfo = _getPageInfo(pageInfoArrayIndex, options);
+    if (!pageInfo) {
+      _log('Unable to fire pageview. pageInfo object is null or does not exist.', LOG_LEVEL.INFO);
+      return;
+    }
+
+    if (options.isModal) return true;
+
+    _log('Firing a pageview with the following info: ', pageInfo, LOG_LEVEL.INFO);
+
+    _trigger('beforePageview', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+    
+    // Capture the pageview.
+    _pageIDHistory('add', pageInfoArrayIndex, pageInfo.pageID);
+    _impressions();
+
+
+    _trigger('afterPageview', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('afterPageviewAAM', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('afterPageviewAdobe', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('initClickAttributes', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('initTargetValues', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('initChatPageView', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('initDLEValues', {
+      'pageInfoArrayIndex': pageInfoArrayIndex
+      , 'pageInfo': pageInfo
+      , 'options': options
+    });
+
+    _trigger('setupDartTags', {
+      'pageInfoArrayIndex': pageInfoArrayIndex,
+      'pageInfo': pageInfo,
+      'options': options
+    });
+    
+  }
+  
+
+  /**
+   * Captures all products out of the digitalData.cart.item array and fires a Coremetrics
+   * Shop Action 5 tag for each one where cartViewTagFired property is false. Once tag has
+   * fired, cartViewTagFired property is set to true, ensuring duplicate Shop Action 5 tags
+   * are not fired for a single product.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @returns {void}
+   */
+  var _fireCartView = function () {
+    if (typeof bactm_cmCreateShopAction5Tag !== 'function') return;
+
+    _trigger('beforeCartView');
+
+    var products = ddo.get('cart.item', []);
+    for (var i = 0, len = products.length; i < len; i++) {
+      if (!products[i].attributes || !products[i].attributes.cartViewTagFired) {
+        try {
+          products[i].attributes = products[i].attributes || {};
+          products[i].attributes.cartViewTagFired = true;
+        }
+        catch (e) {
+          _log(e, LOG_LEVEL.ERROR);
+          reportError(e);
+        }
+      }
+    }
+    ddo.set('cart.item', products);
+
+    // Save cart to the store so it can be loaded from other DOM instances.
+    _saveCartToStore();
+
+    _trigger('afterCartView');
+  }
+
+  /**
+   * Captures all products out of the digitalData.cart.item array and fires a Coremetrics
+   * Shop Action 9 tag for each one where cartViewTagFired property is true. Once tag has
+   * fired, cartViewTagFired property is set to false, ensuring additional Shop Action 5 tags
+   * can be fired.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @returns {void}
+   */
+  var _fireProductsPurchased = function () {
+
+    // from ML bactm
+    var gwimPg = window.digitalData.page.pageInfo[0].pageID;
+    if (gwimPg.match(/GWIM:/gi) != null) {
+        _trigger('afterCartAdobe');
+        return;
+    };
+
+    if (typeof bactm_cmCreateShopAction9Tag !== 'function') return;
+
+    _trigger('beforeProductsPurchased');
+
+    var products = ddo.get('cart.item', []);
+    for (var i = 0, len = products.length; i < len; i++) {
+      if (products[i].attributes && _toLowerCaseString(products[i].attributes.cartViewTagFired) !== 'false') {
+        try {
+          products[i].attributes = products[i].attributes || {};
+          products[i].attributes.cartViewTagFired = false;
+        }
+        catch (e) {
+          _log(e, LOG_LEVEL.ERROR);
+        }
+      }
+    }
+    ddo.set('cart.item', products);
+
+    // Save cart to the store so it can be loaded from other DOM instances.
+    _saveCartToStore();
+
+    _trigger('afterProductsPurchased');
+  }
+
+  /**
+   * Captures all products out of the digitalData.product array and fires a Coremetrics
+   * Productview tag for each one where productviewTagFired property is false. Once tag has
+   * fired, productviewTagFired property is set to true, ensuring duplicate Productview tags
+   * are not fired.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @returns {void}
+   */
+  var _fireProductview = function () {
+
+    _trigger('beforeProductview');
+
+    var products = ddo.get('product', []);
+    for (var i = 0, len = products.length; i < len; i++) {
+      if (!products[i].attributes || !products[i].attributes.productviewTagFired) {
+        try {
+          products[i].attributes = products[i].attributes || {};
+          products[i].attributes.productviewTagFired = true;
+        }
+        catch (e) {
+          _log(e, LOG_LEVEL.ERROR);
+          reportError(e);
+        }
+      }
+    }
+    ddo.set('product', products);
+
+    _trigger('afterProductview');
+  }
+
+  /**
+   * Sends a conversion event tag to Coremetrics.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string} eventName - The unique identifier for the type of conversion event.
+   * @param {string} actionType - Indicates whether the conversion event was initiated or
+   *                  successfully completed. Valid values: initiate|complete
+   * @param {string} category - Allows you to group events into a category.
+   * @returns {void}
+   */
+  var _fireConversionEvent = function (eventName, actionType, category) {
+    var conversion = {
+      eventName: eventName
+      , actionType: actionType
+      , category: category
+    };
+
+    _trigger('beforeConversion', {
+      'conversion': conversion
+    });
+
+    _trigger('afterConversion', {
+      'conversion': conversion
+    });
+  }
+
+  /**
+   * Sends a Custom Error tag for the current page to Coremetrics.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string|number} errorCode - A unique identifier for the Error message.
+   * @param {string} errorMessage - The text of the message that is displayed to the user.
+   * @returns {void}
+   */
+  var _fireCustomError = function (errorCode, errorMessage) {
+    var eventInfo = {
+      'event': 'customError'
+      , 'errorCode': errorCode
+      , 'errorMessage': errorMessage
+    };
+
+    _trigger('beforeCustomError', eventInfo);
+
+      // var pageID = window?.digitalData?.page?.pageInfo[0]?.pageID;
+      // var categoryID = pageID.split(';')[0];
+    
+      _trigger('afterCustomError', eventInfo);
+    }
+
+  /**
+   * Sends a Manual Link Click tag on the current page to Coremetrics.
+   * @private
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string} href - The href for the hyperlink.
+   * @param {string} linkname - The unique descriptive identifier for the link.
+   * @returns {void}
+   */
+  var _fireManualLinkClick = function (href, linkname) {
+    var eventInfo = {
+      'event': 'manualLinkClick'
+      , 'href': href
+      , 'linkname': linkname
+    };
+
+    _trigger('beforeManualLinkClick', eventInfo);
+
+    if (!href || href === '' || href === '#') {
+      href = 'javascript:void(0);';
+    }
+
+    // Triggers Adobe TrackClick Functionality with every manual link click 
+    if (!window.location.href.includes("alloy=true")) {
+      if (href.includes("cm_sp")) {
+          try {
+              const mockAdobeLink = document.createElement('a');
+              mockAdobeLink.href = href;
+              mockAdobeLink.dataset.impressionhref = href;
+              mockAdobeLink.dataset.aaClickEvent = true;
+              mockAdobeLink.id = linkname || "manualAdobeLinkClick";
+              mockAdobeLink.addEventListener('click', (event) => { event.preventDefault(); if (typeof window.bactm.plugins.adobesensei.manualAdobeLinkClick === "function") { window.bactm.plugins.adobesensei.manualAdobeLinkClick(event) } });
+              mockAdobeLink.click()
+          } catch (e) {
+              _log(e, LOG_LEVEL.ERROR);
+              reportError(e);
+          }
+      }
+  }
+
+  _trigger('afterManualLinkClick', eventInfo);
+  }
+
+  /**
+   * Reverts the pageID Coremetrics is currently reporting on to the previous pageID.
+   * Uses a specific pageID from the specified index of the array if provided.
+   * For example, to be called when modal layer that called a second Pageview tag in
+   * a single DOM instance is closed.
+   * @private
+   * @requires eluminate.js
+   * @param {number} [pageInfoArrayIndex=null] - Index of the pageInfo array from
+   *                  digitalData.page.pageInfo[n] you'd like the get the paegID from.
+   * @returns {void}
+   */
+  var _revertToPreviousPageID = function (pageInfoArrayIndex) {
+    var pageID = '';
+
+    if (!isNaN(pageInfoArrayIndex)) {
+      if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+      pageID = ddo.pageInfo.get('pageID', pageInfoArrayIndex);
+    } else {
+      pageID = _pageIDHistory('prev');
+    }
+
+   return pageID
+  }
+
+  /**
+   * Rescans the DOM and adds event handlers to anchor tags for Automatic Link Click tag
+   * functionality.
+   * @private
+   * @requires eluminate.js
+   * @returns {void}
+   */
+  var _rescanDOM = function () {
+    try {
+      if (typeof window.cX === 'function') window.cX('onload');
+      _trigger('adobeListeners');
+      bactm.impressions();
+    } catch (e) {
+      reportError(e);
+    }
+  }
+
+  /**
+   * Adds an event to the log queue which will get sent on page unload.
+   * @private
+   * @param {object} data
+   * @returns {void}
+   */
+  var _addToLogQ = function (data) {
+    var q = logQ || [];
+    q.push(data);
+  }
+
+  // ===========================================================================
+  // End core data collection functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Helper functions.
+  // ===========================================================================
+
+  var _impressions = function (individualImpression = false) {
+    const pageID = _pageIDHistory('current');
+    // Adds impression to the dataCollector
+    function setToDataCollector(spLink) {
+      var qs = new QueryString(spLink);
+      var sitePromotion = {
+        event: 'sitepromotion',
+        options: {
+          value: qs.get('cm_sp'),
+          href: spLink
+        }
+      };
+
+      if (!_isInDataCollector(sitePromotion)) dataCollector.push(sitePromotion);
+    }
+
+    // Manual Impression Tag functionality
+    if (individualImpression) {
+      if (typeof window.bactm.plugins.adobesensei.adobeAssignListeners === "function") {
+          window.bactm.plugins.adobesensei.adobeAssignListeners();
+      }
+
+      const impressionArr = Array.isArray(individualImpression) ? individualImpression : [individualImpression];
+
+      if (bactm.plugins.adobesensei.manualImpression) {
+          // Logic for not firing a manual site promotion more than once a page
+          // Checking whether or not there are duplicates
+
+          // Checks whether this particular impression(s) exists and then adds the manually fired impression to the dataCollector
+          impressionArr.forEach(function (spLink) {
+              setToDataCollector(spLink)
+          });
+
+          // fires impression tags for Acoustics and Adobe analytics
+          impressionArr.forEach((impressionHref) => {
+              if (typeof bactm.plugins.adobesensei.manualImpression === "function") {
+                  window.bactm.plugins.adobesensei.manualImpression(pageID, impressionHref);
+              }
+          });
+
+      };
+      return impressionArr;
+    }
+
+    // Fires Adobe Analytics Impression Tag on initial load or when bactm.impressions doesn't pass an argument
+    let fireAdobe = () => {
+      if (!window.initialAdobePageviewCollected) return;
+      // Build an array of the previous hrefs from impressions tags that have been fired already
+      const previousImpressions = window.dataCollector.filter(
+        (element) => element.event === 'sitepromotion' && element.options.value
+      );
+      // Build and array of all the cm_sp anchors on the page
+      const allImpressionsFound = Array.from(
+        document.getElementsByTagName('a')
+      ).filter(
+        (anchor) =>
+          anchor.dataset.impressionhref || anchor?.attributes?.href?.value?.includes('cm_sp')
+      );
+      // Build an array and filter to eliminate impressions already present in the dataCollector.
+      const sharedValuesFound = allImpressionsFound.filter((cmsp) =>
+        previousImpressions.find((prev) =>
+          cmsp.href.includes(prev.options.value)
+        )
+      );
+      const getCmspAnchors = allImpressionsFound.filter(
+        (item) => !sharedValuesFound.includes(item)
+      );
+      var urlArr = [];
+      getCmspAnchors.forEach((filteredAnchor) => {
+        let hrefValue =
+          filteredAnchor.dataset.impressionhref || filteredAnchor?.attributes?.href?.value;
+        urlArr.push(hrefValue);
+      });
+      // Fires impression tags for Adobe Analytics
+      urlArr.forEach((link) => {
+        if (typeof window.bactm.plugins.adobesensei.manualImpression === "function") {
+          window.bactm.plugins.adobesensei.manualImpression(pageID, link);
+      }
+        setToDataCollector(link);
+      });
+    };
+
+    // final firing of vendor scripts while checking if they exist
+    var scriptsExist = function () {
+      let accessAdobe = setInterval(function () {
+        var adobeAvailable = () => {
+          try {
+            return bactm.plugins.adobesensei.manualImpression ? true : false;
+          } catch (e) {
+            return false;
+          }
+        }
+        window.bactm && window.bactm.plugins && window.bactm.plugins.adobesensei;
+        if (adobeAvailable()) {
+          fireAdobe();
+          if (typeof window.bactm.plugins.adobesensei.adobeAssignListeners === "function") {
+            window.bactm.plugins.adobesensei.adobeAssignListeners();
+        }
+          return clearInterval(accessAdobe);
+        }
+      }, 300);
+
+      setTimeout(function () {
+        clearInterval(accessAdobe);
+      }, 5000);
+    };
+    scriptsExist();
+  }
+
+  var _setPrivacy = function () {
+    if (!ddo.get("privacy")) {
+      ddo.set("privacy", {
+        do_not_track: false
+      });
+    }
+    if (!ddo.get("privacy.do_not_track")) {
+      ddo.set("privacy.do_not_track", false);
+    }
+
+    var tv = _readCookie("throttle_value");
+    ddo.set("privacy.do_not_track", (tv === "999") ? true : ddo.get("privacy.do_not_track"));
+    ddo.set("privacy.do_not_track", (navigator.doNotTrack == 1) ? true : ddo.get("privacy.do_not_track"));
+  }
+
+  /**
+   * Function used to process objects added to the dataCollector array. Objects
+   * should include an event property. Currently 'pageview' is the only supported
+   * event. All other objects added will be ignored.
+   * @private
+   * @param {object} message - Object containing event type and options for selected
+   *      event. 'pageview', 'manualLinkClick', and 'customError' are currently the
+   *      only supported events.
+   *      For pageview events, if no other properties are found, a pageview will be
+   *      fired on digitalData.page.pageInfo[0] with no options.
+   * @returns {void}
+   */
+  var _processDataCollector = function (message) {
+    _log('dataCollector processing: ', message, LOG_LEVEL.DEBUG);
+    var _event = _toLowerCaseString(message.event);
+
+    var events = {
+      'pageview': function () {
+        _firePageview(message.pageInfoKey || 0, message.options || {});
+
+        var pageId = ddo.pageInfo.get('pageID', message.pageInfoKey, '');
+        if (_logPageviewToSplunk[pageId]) log({ type: 'pageview', pageId: pageId });
+      }
+      , 'productview': function () {
+        _fireProductview();
+      }
+      , 'cartview': function () {
+        _fireCartView();
+      }
+      , 'productspurchased': function () {
+        _fireProductsPurchased();
+      }
+      , 'conversion': function () {
+        _fireConversionEvent(message.eventName, message.actionType, message.category);
+      }
+      , 'manuallinkclick': function () {
+        _fireManualLinkClick(message.href, message.linkname);
+      }
+      , 'customerror': function () {
+        _fireCustomError(message.errorCode, message.errorMessage);
+      }
+      , 'customevent': function () {
+        var details = message.options || {};
+        details['eventKey'] = message.eventKey;
+        _trigger('customEvent', details);
+      }
+      , 'log': function () {
+        var data = message.data || {};
+        _addToLogQ(data);
+      }
+    }
+
+    if (events[_event]) {
+      events[_event]();
+    }
+  }
+
+  /**
+   * Takes a pageInfoKey and options object and finds the proper pageInfo array index.
+   * @private
+   * @param {string|number} [pageInfoKey] - Value indicating how to find the pageInfo
+   *      from the digitalData object. Can be the index of the array, pageID, or the
+   *      associated value.
+   * @param {object} [options] - Object of options for this pageview call. Valid
+   *      properties include segmentValues {array}, categoryType {string}, lookupType {string},
+   *      isSaveAndReturn {bool}, saveAndReturnId {string}, applicationId {string}
+   *      cartProducts {array} and isApp {bool}.
+   * @returns {number} pageInfoArrayIndex
+   */
+  var _lookupArrayIndexByKey = function (pageInfoKey, options) {
+    var options = options || {}
+      , pageInfoKeyIsString = typeof pageInfoKey === 'string'
+      , pageInfoArrayIndex = 0;
+
+    if (pageInfoKey) {
+      if (pageInfoKeyIsString && _toLowerCaseString(options.lookupType) === 'associatedvalue') {
+        pageInfoArrayIndex = _findPageInfoArrayIndexByAssociatedValue(pageInfoKey);
+        if (pageInfoArrayIndex === -1) {
+          _log('Unable to find pageInfo matching the specified associated value. Defaulting to zero.', LOG_LEVEL.WARN);
+          pageInfoArrayIndex = 0;
+        }
+      } else if (pageInfoKeyIsString) {
+        pageInfoArrayIndex = _findPageInfoArrayIndexByPageID(pageInfoKey);
+        if (pageInfoArrayIndex === -1) {
+          _log('Unable to find pageInfo matching the specified pageID. Defaulting to zero.', LOG_LEVEL.WARN);
+          pageInfoArrayIndex = 0;
+        }
+      } else {
+        if (_isValidPageInfoArrayIndex(pageInfoKey)) pageInfoArrayIndex = pageInfoKey;
+      }
+    }
+
+    return pageInfoArrayIndex;
+  }
+
+  /**
+   * Processes proper logic based on the options provided.
+   * @private
+   * @param {number} pageInfoArrayIndex - Index of the pageInfo array to associate with the provided options.
+   * @param {object}  options
+   * @param {boolean} options.authenticated - If set, will update the digitalData object indiciating the current user is authenticated.
+   * @param {string}  options.applicationId - If set, will update the digitalData object with the provided application identifier.
+   * @param {string}  options.applicationDecision - If set, will update the digitalData object with the provided application decision.
+   * @param {string}  options.saveAndReturnId - If set, will update the digitalData object with the provided save and return identifier.
+   * @param {string}  options.segmentValues - If set, will update the digitalData object at the provided pageInfo array index with the provided segment values.
+   * @param {object|array}    options.cartProducts - If set, will update the digitalData.cart object with the provided products.
+   * @param {boolean} options.isApp - Indicate if this is pageview is part of an application.
+   * @param {boolean} options.isSaveAndReturn - Indicate if this pageview is part of a save and return application.
+   * @returns {void}
+   */
+  var _processOptions = function (pageInfoArrayIndex, options) {
+    /**
+     * While not as "pretty," using independant if statements is 57% faster rather than a
+     * loop for each optional property using the _setProperty function.
+     */
+
+    if (typeof options.loadCart !== 'undefined' && _toLowerCaseString(options.loadCart) === 'true') {
+      _loadCartFromStore();
+      delete options.loadCart;
+    }
+
+    if (typeof options.clickDART !== 'undefined') {
+      _setProperty('clickDART', options.clickDART, pageInfoArrayIndex);
+      delete options.clickDART;
+    }
+
+    if (typeof options.authenticated !== 'undefined') {
+      _setProperty('authenticated', options.authenticated);
+      delete options.authenticated;
+    }
+
+    if (typeof options.applicationId !== 'undefined') {
+      _setProperty('applicationId', options.applicationId);
+      delete options.applicationId;
+    }
+
+    if (typeof options.applicationDecision !== 'undefined') {
+      _setProperty('applicationDecision', options.applicationDecision);
+      delete options.applicationDecision;
+    }
+
+    if (typeof options.saveAndReturnId !== 'undefined') {
+      _setProperty('saveAndReturnId', options.saveAndReturnId, pageInfoArrayIndex);
+      delete options.saveAndReturnId;
+    }
+
+    if (typeof options.standardDART !== 'undefined') {
+      _setProperty('standardDART', options.standardDART, pageInfoArrayIndex);
+      delete options.standardDART;
+    }
+
+    if (typeof options.standardDARTes !== 'undefined') {
+      _setProperty('standardDARTes', options.standardDARTes, pageInfoArrayIndex);
+      delete options.standardDARTes;
+    }
+
+    if (typeof options.mboxCreateParam !== 'undefined') {
+      _setProperty('mboxCreateParam', options.mboxCreateParam, pageInfoArrayIndex);
+      // delete options.mboxCreateParam;
+    }
+
+    if (typeof options.mboxCreateParam_es !== 'undefined') {
+      _setProperty('mboxCreateParam_es', options.mboxCreateParam_es, pageInfoArrayIndex);
+      // delete options.mboxCreateParam_es;
+    }
+
+    if (typeof options.mboxCreateArgs !== 'undefined') {
+      _setProperty('mboxCreateArgs', options.mboxCreateArgs, pageInfoArrayIndex);
+      delete options.mboxCreateArgs;
+    }
+
+    if (typeof options.chat !== 'undefined') {
+      _setProperty('chat', options.chat, pageInfoArrayIndex);
+      delete options.chat;
+    }
+
+    if (typeof options.segmentValues !== 'undefined') {
+      addManySegmentValues(options.segmentValues, pageInfoArrayIndex);
+      delete options.segmentValues;
+    }
+
+    if (typeof options.cartProducts !== 'undefined') {
+      addProductsToCart(options.cartProducts);
+      delete options.cartProducts;
+    }
+
+    options['isApp'] = _toLowerCaseString(options.isApp) === 'true' ? true : false;
+    options['isSaveAndReturn'] = _toLowerCaseString(options.isSaveAndReturn) === 'true' ? true : false;
+  }
+
+  /**
+   * Get all page info properties required to process a pageview. Merges in required properties
+   * found outside the pageInfo object, localizes pageID to the language, and builds the dynamic
+   * pageID if this is an app call.
+   * @private
+   * @param {number}  [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                  digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @param {object}  [options] - Object containing options for building page info.
+   * @param {boolean} [options.isApp=false] - Is this an app that we should dynamically build
+   *                  the pageID and app information.
+   * @param {string}  [options.categoryType='primary'] - Determine if to use
+   *                  digitalData.page.category.addlCategory[n] or primaryCategory.
+   * @param {number}  [options.addlCategoryIndex] - Index of the addlCategory array from
+   *                  digitalData.page.category.addlCategory[n] you'd like to use.
+   * @returns {object} pageInfo
+   */
+  var _getPageInfo = function (pageInfoArrayIndex, options) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    options = options || {};
+
+    // If we get a null pageID, try to get it from Coremetrics--otherwise return blank.
+    var pageInfo = _clone(ddo.get('page.pageInfo[' + pageInfoArrayIndex + ']'));
+    if (!pageInfo.pageID) pageInfo['pageID'] = '';
+
+    // Return the primaryCategory unless we've requested the additional category.
+    var category = ddo.get('page.category.primaryCategory');
+    if (typeof (options.addlCategoryIndex) !== 'undefined' || _toLowerCaseString(options.categoryType) === 'additional') {
+      var additionalCat = ddo.get('page.category.addlCategory');
+      if (Array.isArray(additionalCat)) {
+        if (_isValidAddlCategoryArrayIndex(options.addlCategoryIndex)) {
+          category = additionalCat[options.addlCategoryIndex];
+        } else {
+          category = additionalCat[0];
+        }
+      } else {
+        category = additionalCat;
+      }
+
+      var pageIDsplit = pageInfo.pageID.split(';');
+      if (pageIDsplit.length > 1 && pageIDsplit[0] !== category) {
+        pageInfo.pageID = category + ";" + pageIDsplit[1];
+      }
+    }
+
+    // If we are dealing with an app, we will need to customize some of the page info before continueing.
+    var isApp = ((pageInfo.appName && pageInfo.appStepNumber) || options.isApp === true) ? true : false;
+    if (isApp) pageInfo = _getAppPageInfo(pageInfo, category, options.isSaveAndReturn);
+
+    // Customize pageInfo data for this instance and centralize data found in other parts of the DDO.
+    var _pageInfo = pageInfo || {};
+    _pageInfo['pageID'] = _localizePageID(pageInfo.pageID, pageInfo.language);
+    _pageInfo['applicationID'] = ddo.get('cart.applicationID');
+    _pageInfo['category'] = category;
+    _pageInfo['attr'] = _getAttrValue(pageInfo);
+    _pageInfo['searchString'] = ddo.get('page.attributes.searchString');
+    _pageInfo['searchResults'] = ddo.get('page.attributes.searchResults');
+    _pageInfo['olbSessionID'] = ddo.get('page.attributes.olbSessionID');
+    _pageInfo['subCampaignCode'] = ddo.get('page.attributes.subCampaignCode');
+    _pageInfo['authenticated'] = (_toLowerCaseString(ddo.get('user.authenticated')) === 'true') ? true : false;
+    _pageInfo['pageInfoArrayIndex'] = pageInfoArrayIndex;
+
+    return _pageInfo;
+  }
+
+  /**
+   * Build the custom pageID and appName for an app. Returns all previous pageInfo
+   * properties passed in as part of the pageInfo object.
+   * @private
+   * @param {object} pageInfo - pageInfo object containing at a minimum appName,
+   *                 appStepNumber, and appStepName.
+   * @param {string} [category] - Category to use in the pageID build. If not
+   *                  provided, digitalData.page.category.primaryCategory will be used.
+   * @returns {object} pageInfo
+   */
+  var _getAppPageInfo = function (pageInfo, category, isSaveAndReturn) {
+    var cat = category || ddo.get('page.category.primaryCategory', '');
+
+    pageInfo = pageInfo || {};
+    pageInfo['originalAppName'] = pageInfo.appName || 'None';
+    pageInfo['appName'] = pageInfo.appName + '_' +
+      (_toLowerCaseString(ddo.get('user.authenticated')) === 'true' ? 'OLB' : 'NonOLB') +
+      (isSaveAndReturn ? '_SNR' : '');
+    pageInfo['pageID'] = cat +
+      ';' + pageInfo.appName +
+      ':' + pageInfo.appStepNumber +
+      ':' + pageInfo.appStepName;
+
+    return pageInfo;
+  }
+
+  /**
+   * Returns an object with all the values found in digitalData.page.pageInfo[n].segmentValue
+   * as key/value pairs of the returned object.
+   * @private
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {object} segments
+   */
+  var _getSegmentValues = function (pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    var segmentValue = ddo.pageInfo.get('segmentValue', pageInfoArrayIndex);
+    if (!segmentValue) return {};
+
+    var segmentPairs = _trim(segmentValue).split(segmentValueSeperator);
+    var segments = {};
+    for (var i = 0, segmentPairsLen = segmentPairs.length; i < segmentPairsLen; i++) {
+      var segment = _getSegmentKeyValue(segmentPairs[i]);
+      segments[segment.key] = segment.value;
+    }
+
+    return segments;
+  }
+
+  /**
+   * Writes the provided string to digitalData.page.pageInfo[n].segmentValue
+   * @private
+   * @param {string} value - String of segments as pipe wrapped key/value pairs (e.g.: '|st_NC||olbc_Y|').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {void}
+   */
+  var _saveSegmentValues = function (value, pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    ddo.pageInfo.set('segmentValue', value, pageInfoArrayIndex);
+  }
+
+  /**
+   * Returns the value of a single segment within digitalData.page.pageInfo[n].segmentValue
+   * found by key.
+   * @private
+   * @param {string} key - Key is the entire string up unti the first underscore in a segment
+   *                 section (e.g.: 'st' in '|st_NC|').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {string} value
+   */
+  var _getSegmentValue = function (key, pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    var current = _getSegmentKeyValues(pageInfoArrayIndex);
+    return current[key];
+  }
+
+  /**
+   * Sets the value of a single segment within digitalData.page.pageInfo[n].segmentValue
+   * found by key. If key does not exist, a new segment will be created.
+   * @private
+   * @param {string} key - Key is the entire string up unti the first underscore in
+   *                 a segment section (e.g.: 'st' in '|st_NC|').
+   * @param {string} value - Vaue is the entire string after the first underscore in
+   *                 a segment section (e.g.: 'NC' in '|st_NC|').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {void}
+   */
+  var _setSegmentValue = function (key, value, pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    var segmentValuesString = '';
+    var current = _getSegmentValues(pageInfoArrayIndex);
+    current[_trim(key)] = value ? _trim(value) : '';
+
+    for (var key in current) {
+      if (current.hasOwnProperty(key)) {
+        segmentValuesString += segmentWrapperChar + key +
+          (current[key] !== '' ? '_' + current[key] : '') +
+          segmentWrapperChar;
+      }
+    }
+
+    _saveSegmentValues(segmentValuesString, pageInfoArrayIndex);
+  }
+
+  /**
+   * Returns an object with a key and a value from an underscore seperated string.
+   * If no underscore is found, entire value is put within the key.
+   * @private
+   * @param {string} segment - Key and value string seperated by an underscore (e.g.: 'st_NC', 'olbc_Y').
+   * @returns {object} segment
+   */
+  var _getSegmentKeyValue = function (segment) {
+    var firstUnderscore = segment.indexOf('_');
+    if (firstUnderscore > -1) {
+      key = segment.substring(0, firstUnderscore);
+      value = segment.substring(firstUnderscore + 1);
+    } else {
+      key = segment;
+      value = '';
+    }
+
+    return {
+      key: key,
+      value: value
+    };
+  }
+
+  /**
+   * Sets the state segment value based on the state cookie.
+   * @private
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the set the segment values to.
+   * @returns {void}
+   */
+  var _setStateSegmentValue = function (pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    var stateFromCookie;
+    if (_toLowerCaseString(ddo.get('page.attributes.stateCookie')) === 'true') stateFromCookie = _readCookie('state');
+    if (stateFromCookie) _setSegmentValue('st', stateFromCookie, pageInfoArrayIndex);
+  }
+
+  /**
+   * Sets the olbc segment value based on the BA_0021 cookie.
+   * @private
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the set the segment values to.
+   * @returns {void}
+   */
+  var _setOLBSegmentValue = function (pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    var authenticated = 'N';
+    if (_readCookie('BA_0021')) authenticated = 'Y';
+
+    _setSegmentValue('olbc', authenticated, pageInfoArrayIndex);
+  }
+
+  /**
+   * Sets the rez segment value based on the current innerWidth and innerHeight of the document.
+   * @private
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the set the segment values to.
+   * @returns {void}
+   */
+  var _setWindowResolutionSegmentValue = function (pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    var value = win.innerWidth + '_' + win.innerHeight;
+
+    _setSegmentValue('rez', value, pageInfoArrayIndex);
+  }
+
+  /**
+   * Sets the SNR segment value if the pageInfo[pageInfoArrayIndex].saveAndReturnId property is populated.
+   * @private
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd like the set the segment values to.
+   * @returns {void}
+   */
+  var _setSNRSegmentValue = function (pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    try {
+      var SNR = ddo.pageInfo.get('saveAndReturnId', pageInfoArrayIndex);
+      if (SNR) _setSegmentValue('SNR', SNR, pageInfoArrayIndex);
+    } catch (e) {
+      reportError(e);
+    }
+  }
+
+  /**
+   * Gets the attr value by adding the current segment value to any existing values within attr.
+   * @private
+   * @param {object} pageInfo - pageInfo object with minimum properties segmentValue and attr.
+   * @returns {string} attr
+   */
+  var _getAttrValue = function (pageInfo) {
+    if (pageInfo.attr) {
+      var attributes = pageInfo.attr.split(attrValueSeperator);
+    } else {
+      var attributes = [];
+    }
+    if (attributes.length > 0) {
+      attributes[0] += pageInfo.segmentValue;
+    }
+    attributes[9] = '1';
+    return attributes.join(attrValueSeperator);
+  }
+
+  /**
+   * An abstraction layer allowing the development teams to set properties on
+   * the digitalData object (DDO) without having to know the structure of the DDO and
+   * manipulate it directly.
+   * @public
+   * @param {string} property - Property type: authenticated|applicationID
+   * @param {string|number|boolean} value - Value to set the property to.
+   * @returns {void}
+   */
+  var _setProperty = function (property, value, pageInfoArrayIndex) {
+    var setAuth = function () {
+      if (_toLowerCaseString(value) === 'true' || _toLowerCaseString(value) === 'false') {
+        ddo.set('user.authenticated', (_toLowerCaseString(value) === 'true') ? true : false);
+      }
+    }
+
+    var setAppID = function () {
+      ddo.set('cart.applicationID', value);
+    }
+
+    var setAppDecision = function () {
+      ddo.set('cart.applicationDecision', value);
+    }
+
+    var setPageInfoProperty = function () {
+      if (_isValidPageInfoArrayIndex(pageInfoArrayIndex)) {
+        ddo.pageInfo.set(property, value, pageInfoArrayIndex);
+      }
+    }
+
+    var commands = {
+      'authenticated': setAuth
+      , 'applicationId': setAppID
+      , 'applicationDecision': setAppDecision
+      , 'isModal': setPageInfoProperty
+      , 'standardDART': setPageInfoProperty
+      , 'standardDARTes': setPageInfoProperty
+      , 'mboxCreateParam': setPageInfoProperty
+      , 'mboxCreateParam_es': setPageInfoProperty
+      , 'mboxCreateArgs': setPageInfoProperty
+      , 'chat': setPageInfoProperty
+      , 'saveAndReturnId': setPageInfoProperty
+      , 'clickDART': setPageInfoProperty
+    };
+
+    if (commands[property]) {
+      commands[property]();
+    }
+  }
+
+  /**
+   * Provides a localized pageID by adding the language abbreviation to the end of the pageID
+   * if other than 'en'. Does not add if the pageID already ends in the provided language abbreviation.
+   * @private
+   * @param {string} pageID - Full pageID.
+   * @param {string} language - Two letter abbreviation for the langauge (e.g.: 'es', 'en', etc.).
+   * @returns {string}
+   */
+  var _localizePageID = function (pageID, language) {
+    ctryCd = /([A-Za-z]){2}[\:\;_-]/
+    language = (ctryCd.exec(language)) ? language.substr(0, ctryCd.exec(language).length) : language
+    if (!language || language.toLowerCase().indexOf('en') > -1 || pageID.slice(-3).toUpperCase() === '_' + language.toUpperCase()) return pageID;
+    else return pageID + '_' + language.toUpperCase();
+  }
+
+  /**
+   * Add products to the digitalData object (DDO) without needing to manage the DDO structure.
+   * Does not add if we find a product with a matching product ID already in the DDO.
+   * @private
+   * @param {object|array} products
+   * @param {string|number} product.productID - Unique identifier for the product.
+   * @param {string} product.productName - Friendly name of the product.
+   * @param {string} product.productCategory - Category product belongs to.
+   * @returns {void}
+   */
+  var _addProducts = function (products) {
+    if (!Array.isArray(products) && typeof products !== 'object')
+      throw new TypeError('addProducts requires a product object or an array of product objects.');
+
+    products = _asArray(products);
+    var ddoProducts = ddo.get('product', []);
+
+    for (var i = 0, productsLen = products.length; i < productsLen; i++) {
+      // If a product by the same ID already exists, no need to re-add it.
+      if (_findArrayIndexByProperty(ddoProducts, 'productInfo.productID', products[i].productID, true) === -1) {
+        ddoProducts.push({
+          'productInfo': {
+            'productID': products[i].productID
+            , 'productName': products[i].productName
+          }
+          , 'category': {
+            'primaryCategory': products[i].productCategory
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Add products to the digitalData object (DDO) cart without needing to manage the DDO structure.
+   * Does not add if we find a product with a matching product ID already in the DDO.
+   * @private
+   * @param {object|array} products
+   * @param {string|number} product.productID - Unique identifier for the product.
+   * @param {string} product.productName - Friendly name of the product.
+   * @param {string} product.productCategory - Category product belongs to.
+   * @returns {void}
+   */
+  var _addProductsToCart = function (products) {
+    if (!Array.isArray(products) && typeof products !== 'object')
+      throw new TypeError('addProductsToCart requires a product object or an array of product objects.');
+
+    products = _asArray(products);
+    var ddoProducts = ddo.get('cart.item', []);
+
+    for (var i = 0, productsLen = products.length; i < productsLen; i++) {
+      // If a product by the same ID already exists, no need to re-add it.
+      if (_findArrayIndexByProperty(ddoProducts, 'productInfo.productID', products[i].productID, true) === -1) {
+        ddoProducts.push({
+          'productInfo': {
+            'productID': products[i].productID
+            , 'productName': products[i].productName
+          }
+          , 'category': {
+            'primaryCategory': products[i].productCategory
+          }
+          , 'attributes': {
+            'cartViewTagFired': false
+          }
+        });
+      }
+    }
+
+    // Save cart to the store so it can be loaded from other DOM instances.
+    _saveCartToStore();
+
+    // Fire Shop Action 5 tag (aka: cartView)
+    cartView(products);
+  }
+
+  /**
+   * Takes the current digitalData.cart object and saves it to the store.
+   * @private
+   * @returns {void}
+   */
+  var _saveCartToStore = function () {
+    var cart = ddo.get('cart', {});
+    var store = new Store('cart');
+    var key = _getCartStoreKey();
+
+    store.set(key, cart);
+    store.save();
+  }
+
+  /**
+   * Load the cart object from the store and if it's not empty, push it
+   * into digitalData.cart.
+   * @private
+   * @returns {void}
+   */
+  var _loadCartFromStore = function () {
+    var store = new Store('cart');
+    var key = _getCartStoreKey();
+    var cart = store.get(key);
+
+    if (!_isEmpty(cart)) ddo.set('cart', cart);
+  }
+
+  /**
+   * Return a key for saving the cart to the store. If the first page in
+   * the pageInfo array has an appName, use that as a key. Otherwise, use the
+   * string 'noKey'.
+   * @private
+   * @returns {string} key
+   */
+  var _getCartStoreKey = function () {
+    return ddo.pageInfo.get('appName', 0, 'noKey');
+  }
+
+  /**
+   * Converts a given value to a lowercase string for comparison.
+   * @private
+   * @param {string|number|bool} value - Value you wish to convert to a lowercase string.
+   * @returns {string}
+   */
+  var _toLowerCaseString = function (value) {
+    return (value + '').toLowerCase();
+  }
+
+  /**
+   * When assigning existing object to a variable, JavaScript passes a reference
+   * to the original object. Thefore, if we want to modify the parameters without modifying
+   * the underling properties of the orignial object, we need to create a clone
+   * @private
+   * @param {object|array} source - Object or array to create a clone of.
+   * @returns {object|array}
+   */
+  var _clone = function (source) {
+    return JSON.parse(JSON.stringify(source));
+  }
+
+  /**
+   * Returns the value of a cookie found to match the provided name.
+   * @private
+   * @param {string} name - Unique name of the cookie.
+   * @returns {string}
+   */
+  var _readCookie = function (name) {
+    var cookies = new Cookies();
+    return cookies.get(name);
+  }
+  // akr Can we remove this?
+  /**
+   * This function grabs the 'CM_CJUID' and 'CM_CJSID' cookies (MDA Coremetrics Parameters) if they exist
+   * Or listens for the MDA_OTT_VALIDATED event and grab the cookies.
+   * Then the cookies are set as 'segmentValue' properties within the DDO
+   */
+
+  // var _setmdaCmParams = function () {
+
+  //   /* if cookies exists, set segmentValues */
+  //   if (_readCookie("CM_CJUID") && _readCookie("CM_CJSID")) {
+  //     _setSegmentValue("cmcjuid", _readCookie("CM_CJUID"));
+  //     _setSegmentValue("cmcjsid", _readCookie("CM_CJSID"));
+  //   } else {
+  //     /* if cookies do not exist, add an event listener for MDA_OTT_VALIDATED*/
+  //     document.addEventListener('MDA_OTT_VALIDATED', function () {
+  //       /* Set cookie values as segmentValues within the DDO */
+  //       _setSegmentValue("cmcjuid", _readCookie("CM_CJUID"));
+  //       _setSegmentValue("cmcjsid", _readCookie("CM_CJSID"));
+  //     })
+  //   }
+  // }
+
+  /**
+   * Interact with the pageIDHistory array within the digitalData object.
+   * @private
+   * @requires digitalData.page.attributes.pageIDHistory
+   * @param {string} command - The command you would like to perform against the
+   *                 pageIDHistory. Supported values: add|prev|current
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you are adding to the history.
+   * @param {string} [pageID] - The full pageID you are adding to the history.
+   * @returns {void|string}
+   */
+  var _pageIDHistory = function (command, pageInfoArrayIndex, pageID) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    if (!pageID) pageID = ddo.pageInfo.get('pageID', pageInfoArrayIndex);
+
+    var history = ddo.get('page.attributes.pageIDHistory', []);
+    var lastIndex = history.length - 1;
+
+    var add = function () {
+      if (history.length === 0 || history[lastIndex].pageID.toLowerCase() !== pageID.toLowerCase()) {
+        history.push({
+          'pageInfoArrayIndex': pageInfoArrayIndex,
+          'pageID': pageID,
+          'timestamp': new Date().getTime()
+        });
+      }
+    };
+
+    var prev = function () {
+      if (history.length > 1) {
+        history.pop();
+      }
+
+      return history[lastIndex - 1].pageID;
+    }
+
+    var current = function () {
+      if (digitalData?.page?.attributes?.pageIDHistory?.length > 0) {
+        return history[lastIndex].pageID
+      } else {
+        return digitalData.page.pageInfo[0].pageID
+      }
+    }
+
+    var commands = {
+      'add': add,
+      'prev': prev,
+      'current': current
+    }
+
+    if (commands[command]) {
+      return commands[command]();
+    }
+  }
+
+  /**
+   * Pushes a messages to the data collector array.
+   * @private
+   * @param {object} message - Object containing necessary properties for data collection.
+   * @returns {void}
+   */
+  var _pushToDataCollector = function (message) {
+    win.dataCollector = win.dataCollector || [];
+
+    _trigger('beforePushToDataCollector', message);
+    win.dataCollector.push(message);
+    _trigger('afterPushToDataCollector', message);
+  }
+
+  /**
+   * Specify a function to execute when the DOM is fully loaded.
+   * @public
+   * @param {function} handler - A function to execute after the DOM is ready.
+   * @returns {void}
+   */
+  var _ready = function (handler) {
+    if (isDOMReady && typeof handler === 'function') {
+      handler();
+    } else {
+      readyHandlers.push(handler);
+    }
+  }
+
+  /**
+   * Process handler functions in readyHandlers and execute.
+   * @private
+   * @returns {void}
+   */
+  var _processReadyHandlers = function () {
+    readyHandlers.forEach(function (handler) {
+      if (typeof handler === 'function') handler();
+    });
+    readyHandlers = [];
+  }
+
+  /**
+   * To be called when the DOM is ready. Sets the domReadyFired flag to true to
+   * avoid duplicate execution of page load. Starts _onLoad() function.
+   * @private
+   * @returns {void}
+   */
+  var _onDomReady = function () {
+    if (!isDOMReady) {
+      isDOMReady = true;
+      _processReadyHandlers();
+    }
+  }
+
+  /**
+   * To be called when DOMContentLoaded event is raised. Cleans up event listner
+   * and starts _onDomReady() function.
+   * @private
+   * @returns {void}
+   */
+  var _domLoadComplete = function () {
+    doc.removeEventListener("DOMContentLoaded", _domLoadComplete);
+    _onDomReady();
+  }
+
+  /**
+   * Stops further execution of Tealium utags by setting the noview flag in
+   * utag_cfg_ovrd object. Sets utagLoadStopped flag to true.
+   * @deprecated
+   * @private
+   * @requires utag
+   * @returns {void}
+   */
+  var _stopUtagLoad = function () {
+    _log('utagLoadStopped: ' + utagLoadStopped, LOG_LEVEL.DEBUG);
+
+    if (!utagLoadStopped) {
+      _log('Stopping further utag loading.', LOG_LEVEL.INFO);
+      utagLoadStopped = true;
+
+      win.utag_cfg_ovrd = { noview: true };
+    }
+  }
+
+  /**
+   * Uses Tealium's utag.view() to start the loading of one, multiple, or
+   * all Tealium tags. If call loads all tags, utagLoadStopped flag will
+   * be set to false.
+   * @deprecated
+   * @private
+   * @requires utag
+   * @param {number|array} [utagIds] - A single int or an array of int
+   *                       indicating which utags to fire. If null, all tags will load.
+   * @returns {void}
+   */
+  var _loadUtags = function (utagIds) {
+    if (utagIds) {
+      utagIds = _asArray(utagIds);
+      utag.view(utag_data, utagIds);
+      _log('Loading utags:', utagIds, LOG_LEVEL.INFO);
+    } else {
+      utagLoadStopped = false;
+      utag.view(utag_data);
+      _log('Loading all utags.', LOG_LEVEL.INFO);
+    }
+  }
+
+  /**
+   * Determines if the provided value is a valid array index
+   * of digitalData.page.pageInfo[n].
+   * @private
+   * @param {number} pageInfoArrayIndex - Index of the pageInfo
+   *                 array you'd like to determine if is valid.
+   * @returns {bool}
+   */
+  var _isValidPageInfoArrayIndex = function (pageInfoArrayIndex) {
+    if (typeof pageInfoArrayIndex === 'undefined' || pageInfoArrayIndex === null || isNaN(pageInfoArrayIndex)) { _log('pageInfoArrayIndex provided is not a number. Defaulting to zero.', LOG_LEVEL.WARN); return false; }
+
+    var pageInfo = ddo.get('page.pageInfo', []);
+    if (pageInfoArrayIndex < 0 || pageInfoArrayIndex > pageInfo.length - 1) { _log('pageInfoArrayIndex provided is outside the bounds of the pageInfo array. Defaulting to zero.'); return false; }
+
+    return true;
+  }
+
+  /**
+   * Determines if the provided value is a valid array index
+   * of digitalData.page.category.addlCategory[n].
+   * @private
+   * @param {number} addlCategoryArrayIndex - Index of the addlCategory
+   *                 array you'd like to determine if is valid.
+   * @returns {bool}
+   */
+  var _isValidAddlCategoryArrayIndex = function (addlCategoryArrayIndex) {
+    if (typeof addlCategoryArrayIndex === 'undefined' || addlCategoryArrayIndex === null || isNaN(addlCategoryArrayIndex)) { _log('addlCategoryArrayIndex provided is not a number. Defaulting to zero.', LOG_LEVEL.WARN); return false; }
+
+    var addlCategory = ddo.get('page.category.addlCategory', []);
+    if (addlCategoryArrayIndex < 0 || addlCategoryArrayIndex > addlCategory.length - 1) { _log('addlCategoryArrayIndex provided is outside the bounds of the addlCategory array. Defaulting to zero.'); return false; }
+
+    return true;
+  }
+
+  /**
+   * Search through digitalData.page.pageInfo array for a specific pageID.
+   * @private
+   * @param {string} pageID - pageID we are searching for. Search is not case sensitive.
+   * @returns {number} pageInfoArrayIndex
+   */
+  var _findPageInfoArrayIndexByPageID = function (pageID) {
+    return _findArrayIndexByProperty(ddo.get('page.pageInfo', []), 'pageID', pageID, true);
+  }
+
+  /**
+   * Find the index of the array where a property on the objects
+   * within the array equals a specified value.
+   * @private
+   * @param {array} array - Array of objects to search through.
+   * @param {string} property - Property on object within array to match on.
+   * @param {string|number|bool} value - Value we are searching for.
+   * @param {bool} [looseMatch=false] - Strings case insensitive, other
+   *               matches are loose equality match.
+   * @returns {number} arrayIndex
+   */
+  var _findArrayIndexByProperty = function (array, property, value, looseMatch) {
+    var properties = property.split('.');
+    var topPropertyName = properties[0];
+    var lowerPropertyName;
+
+    for (var i = 0, len = array.length; i < len; i += 1) {
+      var prop = array[i][topPropertyName];
+      if (!prop) array[i][topPropertyName] = [];
+      for (var j = 1, propLen = properties.length; j < propLen; j++) {
+        prop = prop[properties[j]];
+        if (!prop) break;
+      }
+
+      if (!looseMatch && prop === value) return i;
+      else if (looseMatch && typeof value === 'string' && _trim(_toLowerCaseString(prop)) === _trim(_toLowerCaseString(value))) return i;
+      else if (looseMatch && prop == value) return i;
+    }
+    return -1;
+  }
+
+  /**
+   * Finds the pageID by a unique value in the Dynamic_PageView_Element lookup table and attempts to
+   * match the pageID with one in digitalData.page.pageInfo[n]. If a match is found, returns the
+   * array index, otherwise returns -1. Associated value search is not case sensitive.
+   * @private
+   * @requires utag_data.Dynamic_PageView_Element - Comma deliminated string of pageID-_-associatedValue pairs.
+   * @param {string} value - Unique string to match within the lookup table found after the -_- seperator.
+   * @returns {number} pageInfoArrayIndex
+   */
+  var _findPageInfoArrayIndexByAssociatedValue = function (value) {
+    if (!value) return -1;
+    if (!utag_data.Dynamic_PageView_Element) return -1;
+
+    var recordDelimiter = ',';
+    var value = '-_-' + value.toLowerCase() + recordDelimiter;
+    var utagLookupData = utag_data.Dynamic_PageView_Element.toLowerCase();
+    if (utagLookupData.slice(-1) !== recordDelimiter) utagLookupData += recordDelimiter;
+
+    var pageID;
+    var associatedValuePosition = utagLookupData.indexOf(value);
+    if (associatedValuePosition > -1) {
+      var startPosition = utagLookupData.lastIndexOf(recordDelimiter, associatedValuePosition) + 1;
+      pageID = utag_data.Dynamic_PageView_Element.substring(startPosition, associatedValuePosition);
+    }
+
+    if (!pageID) return -1;
+
+    return _findPageInfoArrayIndexByPageID(pageID);
+  }
+
+  /**
+   * Takes any value, if it's already an array returns itself. Otherwise, returns an array with
+   * the value being the item within the array.
+   * @private
+   * @param {any} value
+   * @returns {array}
+   */
+  var _asArray = function (value) {
+    if (Array.isArray(value)) return value;
+    return [value];
+  }
+
+  /**
+   * Trims the segmentWrapperChar and whitespace from the begging and end of the provided string.
+   * @private
+   * @param {string} s - String to sanatize.
+   * @returns {string} value
+   */
+  var _trim = function (s) {
+    if (!s) return;
+
+    if (s.length >= 1 && s[0] === segmentWrapperChar) s = s.slice(1);
+    if (s.length >= 1 && s[s.length - 1] === segmentWrapperChar) s = s.slice(0, -1);
+
+    return s.trim();
+  }
+
+  /**
+   * Check an object to see if it has any properties.
+   * @param {object} obj - Object to to check if is empty.
+   * @returns {boolean}
+   */
+  function _isEmpty(obj) {
+    // null and undefined are "empty"
+    if (obj == null) return true;
+
+    // Assume if it has a length property with a non-zero value
+    // that that property is correct.
+    if (obj.length > 0) return false;
+    if (obj.length === 0) return true;
+
+    // If it isn't an object at this point
+    // it is empty, but it can't be anything *but* empty
+    // Is it empty?  Depends on your application.
+    if (typeof obj !== "object") return true;
+
+    // Otherwise, does it have any properties of its own?
+    // Note that this doesn't handle
+    // toString and valueOf enumeration bugs in IE < 9
+    for (var key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Returns a the default value if no value is passed as the property.
+   * @private
+   * @param {*} _property
+   * @param {*} _default
+   * @returns {*}
+   */
+  var _setDefault = function (_property, _default) {
+    return (typeof _property === 'undefined' || _property === null) ? _default : _property;
+  }
+
+  /**
+   * Returns the top level domain for the provided string.
+   * Example: _tld('www.bankofamerica.com') will return 'bankofamerica.com'
+   * @private
+   * @param {string} d
+   * @returns {string}
+   */
+  var _tld = function (d) {
+    d = d || win.location.hostname;
+    var parts = d.split('.').reverse();
+
+    if (parts.length === 1) return parts[0];
+
+    if (parts.length > 2 && parts[1].length <= 3) {
+      return parts.splice(0, 3).reverse().join('.');
+    }
+
+    return parts.splice(0, 2).reverse().join('.');
+  }
+
+  /**
+   * Logs a deprecation warning to the console.
+   * @private
+   * @param {string} functionName - Name of the deprecated function called.
+   * @param {string} [msg] - Additional message to log to the console.
+   * @returns {void}
+   */
+  var _deprecationWarning = function (functionName, msg) {
+    _log('Deprecation warning: ' + functionName + ' is deprecated. ' + msg, LOG_LEVEL.WARN);
+  }
+
+  /**
+   * Logs a message and/or an object to the console based on your log settings in _settings.logLevel
+   * @private
+   * @param {string|object} msg - Message to be logged to the console.
+   * @param {object|array} [obj1] - Object to be logged to the console along side the message.
+   * @param {number} [severity=1] - Severity level of the message. Determines which log type to send to console and when to log based on _settings.logLevel.
+   * @returns {void}
+   */
+  var _log = function (msg, obj1, severity) {
+    if (!severity && typeof obj1 === 'number') {
+      severity = obj1;
+      obj1 = null;
+    } else if (!severity) {
+      severity = 1;
+    }
+
+    if (_settings.logLevel <= severity && typeof console !== "undefined") {
+      var logType = LOG_LEVEL_STRINGS[severity];
+      if (typeof logType != "string") logType = "log";
+      if (console[logType]) { // if not defined, fallback to console.log()
+        if (obj1) {
+          console[logType](msg, obj1);
+        } else {
+          console[logType](msg);
+        }
+      } else if (console.log) {
+        if (typeof obj1 === 'object') msg += '\n' + JSON.stringify(obj1, null, 2);
+        console.log(logType.toUpperCase() + ": " + msg);
+      }
+    }
+  }
+
+  /**
+   * Return a unified timestamp that takes into account the timezone offset.
+   * @private
+   * @returns {timestamp}
+   */
+  var _timestamp = function () {
+    var e = new Date;
+    return e.getTime() - e.getTimezoneOffset()
+  }
+
+  /**
+   * This function serves as an API to set application details in the digitalData object agnostically of data collection tool.
+   * @param {object} payload contains the application details to be set in the ddo
+   * @returns {void}
+   */
+  var _setApplicationDetails = function (payload) {
+    if (typeof payload !== 'object') {
+      _log('Payload is not an object', LOG_LEVEL.ERROR);
+      return;
+    }
+
+    if (!window.digitalData) {
+      _log('digitalData object is not available', LOG_LEVEL.ERROR);
+      return;
+    }
+
+    var cart = window.digitalData.cart || {
+      cartID: '',
+      applicationID: null,
+      attributes: {},
+      item: [],
+      fulfilmentID: null
+    };
+
+    for (var prop in payload) {
+      if (payload.hasOwnProperty(prop)) {
+        if (cart.hasOwnProperty(prop)) {
+          cart[prop] = payload[prop];
+        }
+      }
+    }
+
+    window.digitalData.cart = cart;
+  }
+  /**
+   * This function grabs the applicationID for credit card applications and adds it to the ddo
+   * @returns {string} applicationID
+   */
+  var _getApplicationId = function () {
+    // grab applicationID from global scope if available
+    if (window.cm) return window.cm.orderID;
+  }
+
+  /**
+   * This function repeats in 100ms interval until it is able to set the celebrus content key in the ddo.
+   *
+   * @private
+   * @requires ddo.user.sharedIDs to be defined
+   * @returns {undefined}
+   */
+  var getCelebrusContentKey = function () {
+    if (ddo.get('user.sharedIDs') === null) {
+      ddo.set('user.sharedIDs', {});
+    }
+    var accessCelebrusContentKey = setInterval(function () {
+      if (ddo.get('user.sharedIDs.celebrus') !== null) {
+        return clearInterval(accessCelebrusContentKey);
+      }
+
+      if (win.celebruscontentKey) {
+        ddo.set('user.sharedIDs.celebrus', win.celebruscontentKey);
+        _trigger('celebrusContentKeyAvailable');
+      }
+    }, 100);
+  };
+
+
+  /**
+   * Take a URI value and decompose it returning an object with the individual pieces
+   * as a set of key/value pairs.
+   *
+   * @private
+   * @param {*} uri
+   * @returns {object}
+   */
+  var decomposeUri = function (uri) {
+    var a = doc.createElement('a');
+    a.href = uri || doc.referrer;
+
+    var pathname = a.pathname.replace(/^\//, ''); // Normalize initial slash, i.e., IE6 'search' vs Chrome '/search'
+
+    return {
+      url: a.host + '/' + pathname,
+      hash: a.hash,
+      host: a.host,
+      hostname: a.hostname,
+      pathname: pathname,
+      protocol: a.protocol,
+      uriParams: (function (retVal, s) {
+        if (s !== "") {
+          polyfills.array.map(s.split('&'), function (elem) {
+            var k = elem.split('=');
+            retVal[k.shift()] = k.shift();
+          });
+          return retVal;
+        } else return '';
+      }({}, a.search.replace(/^(\/|\?)?|\/$/g, ''))) // Remove leading ? from query string value
+    };
+  }
+
+  // here lies eventify, a good idea well executed, but an incomplete solution.
+
+    /**
+     * setting a mutation observer on the head element for third party scripts
+     * once we know a script is ready we can execute subsequent methods
+     * ex: bactm.scriptReady('thirdPartyVendor', { childList: true }, callbackMethod)
+     * @param {string} src 
+     * @param {object} options 
+     * @callback runFunction
+     */
+    const _scriptReady = (src, options = { childList: true }, runFunction = () => {}) => {
+      const observingHead = new MutationObserver(function(mutationList, observer) {
+        const vendorScript = document.querySelector(`script[src*="${src}"]`);
+        if (vendorScript && vendorScript.src && vendorScript.src.includes(src)) {
+          runFunction()
+          observer.disconnect();
+        }
+      })
+      const head = document.querySelector("head");
+      observingHead.observe(head, options)
+    }
+
+  // ===========================================================================
+  // End helper functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Trigger & Listener functions.
+  // ===========================================================================
+
+  var _listener = function (eventKey, listener) {
+    var isListenerQueued = queuedEvents.hasOwnProperty(eventKey);
+
+    // if the event was queued, fire the listener with the queued info
+    if (isListenerQueued) {
+      queuedEvents[eventKey] = queuedEvents[eventKey] || [];
+      queuedEvents[eventKey].forEach(function (info) {
+        listener(typeof info !== 'undefined' ? info : {});
+      });
+
+      delete queuedEvents[eventKey];
+    }
+
+    // Create the event's object if not yet created.
+    publishedEvents[eventKey] = publishedEvents[eventKey] || [];
+
+    // Add the listener to the queue
+    var index = publishedEvents[eventKey].push(listener) - 1;
+
+    return {
+      remove: function () {
+        delete publishedEvents[eventKey][index];
+      }
+    }
+  }
+
+
+  var _trigger = function (eventKey, info) {
+    // If the event doesn't exist then there are no listeners in the queue, just leave.
+    var isListenerRegistered = publishedEvents.hasOwnProperty(eventKey);
+    var isListenerQueued = queuedEvents.hasOwnProperty(eventKey);
+
+    // if a listener is not registered, check if it has been queued.
+    // if it hasn't then queue it and leave.
+    if (!isListenerRegistered) {
+      if (isListenerQueued) return;
+      queuedEvents[eventKey] = queuedEvents[eventKey] || [];
+      info = info || {};
+      return queuedEvents[eventKey].push(info);
+    }
+
+    // if the listener is registered and still in the queue, delete it from the queue
+    if (isListenerQueued) delete queuedEvents[eventKey];
+
+    // Cycle through the published events queue and fire listeners.
+    publishedEvents[eventKey].forEach(function (listener) {
+      listener(typeof info !== 'undefined' ? info : {});
+    });
+  }
+
+  // ===========================================================================
+  // End Triggers & Listener functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // dataCollector Queue functions.
+  // ===========================================================================
+
+  var _dataCollectorHelper = function (dataCollector, listener, listenToPast) {
+    this._dataCollector = dataCollector;
+    this._listener = listener || function () { };
+    this._executingListener = false;
+    this._unprocessed = [];
+
+    var oldPush = dataCollector.push;
+    var that = this;
+    dataCollector.push = function () {
+      var messages = [].slice.call(arguments, 0);
+      var result = oldPush.apply(dataCollector, messages);
+      that._processMessages(messages);
+      return result;
+    }
+
+    this._processMessages(dataCollector, !listenToPast);
+  }
+  // win['dataCollectorHelper'] = _dataCollectorHelper;
+
+  _dataCollectorHelper.prototype._processMessages = function (messages, skipListener) {
+    this._unprocessed.push.apply(this._unprocessed, messages);
+
+    while (this._executingListener === false && this._unprocessed.length > 0) {
+      var update = this._unprocessed.shift();
+      if (!skipListener) {
+        this._executingListener = true;
+        this._listener(update);
+        this._executingListener = false;
+      }
+    }
+  }
+
+  // ===========================================================================
+  // End dataCollector Queue functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // digitalData Object - Getter and Setter functions.
+  // ===========================================================================
+
+  var ddo = {};
+
+  /**
+   * Returns the value within the digitalData object. If a portion of the path doesn't exist,
+   * return the defaultValue.
+   *
+   * @public
+   * @param {string} key - The path of the property to return.
+   * @param {*} (defaultValue=null) - The value to return if the property isn't set.
+   * @returns {*} value.
+   */
+  ddo.get = function (key, defaultValue) {
+    if (typeof key !== 'string') throw new TypeError('Key must be a dot seperated string.');
+    defaultValue = typeof defaultValue === 'undefined' ? null : defaultValue;
+
+    var tree = key.split('.');
+    var base = window.digitalData || {};
+    for (var i = 0, len = tree.length; i < len; i++) {
+      var propKey = tree[i];
+
+      // See if we are referencing an array in the path.
+      var arrInd = propKey.indexOf('[');
+      if (arrInd > -1) {
+        // Get the name portion of the array we are referencing.
+        var arrPropKey = propKey.substring(0, arrInd);
+        if (!Array.isArray(base[arrPropKey]) || base[arrPropKey].length === 0)
+          return defaultValue;
+
+        // Get the index value of the array we are referencing.
+        var index = propKey.substring(arrInd + 1, propKey.length - 1);
+        if (isNaN(index)) return defaultValue;
+
+        // If the index it outside the bounds of the array, return the defaultValue.
+        if (index < 0 || index >= base[arrPropKey].length) return defaultValue;
+
+        // If this is the last property in the path, return the value.
+        if (i === len - 1) return base[arrPropKey][index];
+
+        // Set our base and continue on in the path.
+        base = base[arrPropKey][index];
+        continue;
+      }
+
+      // Check if the property exists.
+      var baseHasProperty = base.hasOwnProperty(propKey);
+
+      // If the property in the path exists, and we have further to go
+      // in our path, set the base and continue on in the path.
+      if (baseHasProperty && i < len - 1) {
+        base = base[propKey];
+        continue;
+      }
+
+      // If the property exists, return the value. Otherwise return the defaultValue.
+      return baseHasProperty ? base[propKey] : defaultValue;
+    }
+  }
+
+  /**
+   * Sets the value within the digitalData object. If a portion of the path doesn't exist,
+   * it's created.
+   *
+   * @public
+   * @param {string} key - The path of the property to set.
+   * @param {*} value - The value to set.
+   * @returns {*} value.
+   */
+  ddo.set = function (key, value) {
+    if (typeof key !== 'string') throw new TypeError('Key must be a dot seperated string.');
+    if (typeof value === 'undefined') throw new TypeError('A value must be provided.');
+
+    var tree = key.split('.');
+    var base = window.digitalData || {};
+
+    if (key === 'user.glancePartyID') _trigger('vendor:glance:auth', value)
+
+    for (var i = 0, len = tree.length; i < len; i++) {
+      var propKey = tree[i];
+
+      // See if we are referencing an array in the path.
+      var arrInd = propKey.indexOf('[');
+      if (arrInd > -1) {
+        // Get the name portion of the array we are referencing.
+        var arrPropKey = propKey.substring(0, arrInd);
+        if (!Array.isArray(base[arrPropKey]) && typeof base[arrPropKey] !== 'undefined')
+          throw new TypeError('You referenced an array index but the property ' +
+            arrPropKey + ' is not an array.');
+
+        // Get the index value of the array we are referencing.
+        var index = parseInt(propKey.substring(arrInd + 1, propKey.length - 1));
+        if (isNaN(index)) throw new TypeError('The array index must be a number.');
+
+        // Get the array and check its length.
+        base[arrPropKey] = base[arrPropKey] || [];
+        var baseLen = base[arrPropKey].length;
+
+        // If the index it outside the bounds of the array, throw an error.
+        if (index !== 0 && (index < 0 || index > baseLen))
+          throw new RangeError('Trying to save to an index outside the range of the array.');
+
+        // Check if we are at the end of the path.
+        if (i === len - 1) {
+          // The index requested is one greater than the current length.
+          // In this case, we can go ahead and push the value onto the end.
+          if (index === baseLen) {
+            base[arrPropKey].push(value);
+            return value;
+          }
+
+          // We are within the bounds of the array and at the end of the
+          // path, so set the value against the array index provided.
+          base[arrPropKey][index] = value;
+          return value;
+        };
+
+        // The index requested is one greater than the current length.
+        // In this case, we can go ahead and push a blank object onto the end.
+        if (index === baseLen) base[arrPropKey].push({});
+
+        // We aren't at the end of the path, so we know to set the a property
+        // on the index provided, there needs to be an object there.
+        if (typeof base[arrPropKey][index] !== 'object')
+          throw new TypeError('Cannot write to a non-object property.');
+
+        // Set our base and continue on in the path.
+        base = base[arrPropKey][index];
+        continue;
+      }
+
+      // Check if we are at the end of the path.
+      if (i === len - 1) {
+        // We are at the end of the path, but we cannot set a property on a non-object.
+        if (typeof base !== 'object')
+          throw new TypeError('Cannot write to a non-object property.');
+
+        // We can set the value and get out of here.
+        base[propKey] = value;
+        return value;
+      }
+
+      // Set our base and continue on in the path.
+      base[propKey] = base[propKey] || {};
+      base = base[propKey];
+    }
+
+  }
+
+  // Shortcuts for working with the pageInfo object.
+  ddo.pageInfo = {};
+
+  /**
+   * Shortcut to retrieve pageInfo properties from within the digitalData.page.pageInfo array.
+   *
+   * @public
+   * @param {string} key - The path of the property to return.
+   * @param {string} [index=0] - The pageInfo array index.
+   * @param {*} [defaultValue=null] - The value to return if the property isn't set.
+   * @returns {*} value.
+   */
+  ddo.pageInfo.get = function (key, index, defaultValue) {
+    return ddo.get('page.pageInfo[' + (index || 0) + ']' + (key ? ('.' + key) : ''), defaultValue);
+  }
+
+  /**
+   * Shortcut to set the value within the digitalData.page.pageInfo object. If a portion of
+   * the path doesn't exist, it's created.
+   *
+   * @public
+   * @param {string} key - The path of the property to set.
+   * @param {*} value - The value to set.
+   * @param {number} [index=0] - The pageInfo array index.
+   * @returns {*} value.
+   */
+  ddo.pageInfo.set = function (key, value, index) {
+    if (typeof value === 'undefined') { value = key; key = null; }
+    return ddo.set('page.pageInfo[' + (index || 0) + ']' + (key ? ('.' + key) : ''), value);
+  }
+
+  // ===========================================================================
+  // End digitalData Object - Getter and Setter functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // SudoPromise API functions.
+  // ===========================================================================
+
+  var SudoPromise = function (cb) {
+    var self = this
+      , _state = 0
+      , _result = null
+      , _deferred = null;
+
+    self._onResolved = null;
+    self._onRejected = null;
+
+    var resolve = function (result) {
+      if (_state !== 0) return;
+
+      _state = 1;
+      _result = result;
+
+      if (_deferred) self.handle(_deferred);
+    }
+
+    var reject = function (reason) {
+      if (_state !== 0) return;
+
+      _state = 2;
+      _result = reason;
+
+      if (_deferred) self.handle(_deferred);
+    }
+
+    self.handle = function (handler) {
+      if (_state === 0) {
+        _deferred = handler;
+        return;
+      }
+
+      if (_state === 1) {
+        handler.onResolve(_result);
+        _deferred = null;
+      } else if (_state === 2 && handler.onRejection) {
+        handler.onRejection(_result);
+        _deferred = null;
+      }
+    }
+
+    cb(resolve, reject);
+  };
+
+  SudoPromise.prototype.then = function (onResolve, onRejection) {
+    var self = this;
+
+    if (onResolve) self._onResolved = onResolve;
+    if (onRejection) self._onRejected = onRejection;
+
+    self.handle({
+      onResolve: self._onResolved,
+      onRejection: self._onRejected
+    });
+
+    return self;
+  }
+
+  SudoPromise.prototype.catch = function (onRejection) {
+    this.then(null, onRejection);
+  }
+
+  // ===========================================================================
+  // End SudoPromise API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // AJAX API functions.
+  // ===========================================================================
+
+  var Ajax = function () {
+    if (!(this instanceof Ajax)) return new Ajax();
+  }
+
+  Ajax.prototype.xhr = function (opt) {
+    return new _ajaxHelpers.Promise(function (resolve, reject) {
+      try {
+        var url, params = opt.data || null;
+
+        if (typeof opt === 'string') url = opt;
+        if (!opt) opt = {};
+
+        var method = opt.method || 'GET';
+        url = url || opt.url || '';
+        var async = (typeof opt.sync !== 'undefined') ? !opt.sync : true;
+
+        if (!url) throw 'A URL is required.';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, url, async, opt.user, opt.password);
+
+        if (opt.contentType === 'json') xhr.setRequestHeader("Content-Type", "application/json");
+        if (opt.data && ((!opt.contentType && typeof opt.data !== 'string') || opt.contentType === 'json')) params = JSON.stringify(opt.data);
+        if (opt.withCredentials) xhr.withCredentials = true;
+
+        if (opt.headers) {
+          for (key in opt.headers) {
+            xhr.setRequestHeader(key, opt.headers[key]);
+          }
+        }
+
+        xhr.onerror = function () {
+          reject('Uncaught AJAX error raised. Check the URL.');
+        }
+
+        xhr.onload = function () {
+          if (xhr.status === 200) resolve(xhr.responseText);
+          else reject('Request failed. Returned status of ' + xhr.status);
+        }
+
+        xhr.send(params);
+      } catch (e) {
+        reject(e);
+        reportError(e);
+      }
+    });
+  }
+
+  Ajax.prototype.jsonp = function (url, jsonp, cb) {
+    var body = doc.body || doc.getElementsByTagName('body')[0];
+
+    win[jsonp] = function (data) {
+      delete win[jsonp];
+      body.removeChild(script);
+      cb(data);
+    };
+
+    var script = doc.createElement('script');
+    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + jsonp;
+    body.appendChild(script);
+  }
+
+  Ajax.prototype.post = function (url, data, opt) {
+    var postOpts = {
+      method: 'POST'
+      , url: url
+      , data: data
+    };
+    polyfills.object.assign(postOpts, opt);
+
+    return this.xhr(postOpts);
+  }
+
+  Ajax.prototype.get = function (url, opt) {
+    var getOpts = {
+      method: 'GET'
+      , url: url
+    };
+    polyfills.object.assign(getOpts, opt);
+
+    return this.xhr(getOpts);
+  }
+
+  // ===========================================================================
+  // End AJAX API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // AJAX helper functions.
+  // ===========================================================================
+
+  var _ajaxHelpers = {};
+
+  if (typeof Promise === 'function') _ajaxHelpers.Promise = Promise;
+  else _ajaxHelpers.Promise = SudoPromise;
+
+  // ===========================================================================
+  // End AJAX helper functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Store API functions.
+  // ===========================================================================
+
+  var Store = function (key, config) {
+    if (!(this instanceof Store)) return new Store(key, config);
+
+    this._config = (config && typeof config !== 'boolean') ? config : {};
+    this._key = key;
+    this._store = {};
+
+    // Making this backwards compatible for when second argument was useLocalStorage bool.
+    if (!config || typeof config === 'boolean') {
+      this._config.type = config ? 'localStorage' : 'sessionStorage';
+    }
+
+    if (key) return this.load(key, config);
+  }
+
+  Store.prototype.load = function (key, config) {
+    if (typeof key !== 'string') return this;
+    this._key = key;
+
+    config = config || {};
+    if (config.type) this._config.type = _setDefault(config.type, 'sessionStorage');
+
+    var cmdKey = _storeHelpers.cmds[this._config.type];
+    this._helpers = _storeHelpers[cmdKey](this._config);
+    this._store = this._helpers.load(key);
+
+    return this;
+  }
+
+  Store.prototype.all = function () {
+    return this._store;
+  }
+
+  Store.prototype.get = function (key) {
+    if (typeof key !== 'string' || !this._store[key]) return null;
+
+    return this._store[key];
+  }
+
+  Store.prototype.set = function (key, value) {
+    if (typeof key !== 'string' || typeof value === 'undefined') return;
+
+    this._store[key] = value;
+  }
+
+  Store.prototype.remove = function (key) {
+    if (typeof key !== 'string') return;
+    delete this._store[key];
+  }
+
+  Store.prototype.save = function (key) {
+    var _saveKey = key || this._key;
+    if (typeof _saveKey !== 'string') {
+      _log('Invalid storage key provided. Unable to save to ' + this._config.type + '.', LOG_LEVEL.WARN);
+      return;
+    };
+
+    try {
+      this._helpers.save(_saveKey, this._store);
+      if (key) this._key = key;
+    } catch (e) {
+      _log('Unable to save to ' + this._config.type + '.', LOG_LEVEL.WARN);
+      reportError(e);
+    }
+  }
+
+  Store.prototype.clear = function () {
+    this._store = {};
+    this.save();
+  }
+
+  Store.prototype.delete = function () {
+    try {
+      this._helpers.save(this._key, null);
+      this._store = {};
+    } catch (e) {
+      _log('Unable to remove ' + this._config.type + ' item.', LOG_LEVEL.WARN);
+      reportError(e);
+    }
+  }
+
+  // ===========================================================================
+  // End Store API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Store API helper functions.
+  // ===========================================================================
+  var _storeHelpers = {};
+
+  _storeHelpers.cmds = {
+    'sessionStorage': 'storage'
+    , 'localStorage': 'storage'
+    , 'sessionCookie': 'cookie'
+    , 'cookie': 'cookie'
+  }
+
+  _storeHelpers.cookie = function (config) {
+    var _cookieName = 'bactm'
+      , _cookieConfig = {
+        domain: _tld()
+      };
+
+    config = config || {};
+
+    if (config.type
+      && typeof config.type === 'string'
+      && config.type.indexOf('session') === -1
+    ) {
+      _cookieName = 'bactm_lts';
+      _cookieConfig['expires'] = 365;
+      _cookieConfig['sameSite'] = 'none';
+      _cookieConfig['secure'] = true;
+    }
+
+    var _cookies = new Cookies()
+      , _bactmCookie = _cookies.getJSON(_cookieName) || {};
+
+    var _load = function (key) {
+      return _bactmCookie[key] || {};
+    }
+
+    var _save = function (key, value) {
+      _cookies._refresh();
+      if (value === null) delete _bactmCookie[key];
+      else _bactmCookie[key] = value;
+
+      _cookies.set(_cookieName, _bactmCookie, _cookieConfig);
+    }
+
+    return {
+      load: _load
+      , save: _save
+    }
+  }
+
+  _storeHelpers.storage = function (config) {
+    var _storage = window[config.type];
+
+    var isJSONString = function (str) {
+      try {
+        JSON.parse(str);
+      } catch (e) {
+        return false;
+      }
+      return true;
+    }
+
+    var _load = function (key) {
+      var _data;
+
+      try {
+        _data = isJSONString(_storage.getItem(storageKeyPrefix + key)) ?
+          JSON.parse(_storage.getItem(storageKeyPrefix + key)) :
+          _storage.getItem(storageKeyPrefix + key);
+      } catch (e) {
+        // _log('Unable to read from ' + config.type + '.', LOG_LEVEL.WARN);
+        console.log('Unable to read from ' + config.type + '.');
+        reportError(e);
+      }
+
+      return _data || {};
+    }
+
+    var _save = function (key, value) {
+      var _storageKey = storageKeyPrefix + key;
+
+      if (value === null) _storage.removeItem(_storageKey);
+      else _storage.setItem(_storageKey, JSON.stringify(value));
+    }
+
+    return {
+      load: _load
+      , save: _save
+    }
+  }
+  // ===========================================================================
+  // End Store API helper functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Cookies API functions.
+  // ===========================================================================
+
+  var Cookies = function () {
+    if (!(this instanceof Cookies)) return new Cookies();
+
+    var self = this;
+
+    self._refresh = function () {
+      self._cookies = doc.cookie ? doc.cookie.split('; ') : [];
+      self._cookieCache = {};
+    }
+
+    self._refresh();
+  }
+
+  Cookies.prototype.set = function (key, value, options) {
+    if (!key) return;
+
+    var options = options || {};
+    options['path'] = options.path || '/';
+
+    if (typeof options.expires === 'number') {
+      var expires = new Date();
+      expires.setMilliseconds(expires.getMilliseconds() + options.expires * 864e+5);
+      options.expires = expires;
+    } else if (typeof options.expires === 'string') {
+      try {
+        var expires = new Date(Date.parse(options.expires));
+        options.expires = expires;
+      } catch (e) {
+        reportError(e);
+        delete options.expires;
+      }
+    }
+
+    // We're using "expires" because "max-age" is not supported by IE
+    options.expires = options.expires ? options.expires.toUTCString() : '';
+
+    var rawKey = key;
+    key = encodeURIComponent(String(key));
+
+    try {
+      result = JSON.stringify(value);
+      if (/^[\{\[]/.test(result)) {
+        value = encodeURIComponent(result);
+      }
+    } catch (e) { }
+
+    var stringifiedAttributes = '';
+
+    for (var attributeName in options) {
+      if (!options[attributeName]) {
+        continue;
+      }
+      stringifiedAttributes += '; ' + attributeName;
+      if (options[attributeName] === true) {
+        continue;
+      }
+      stringifiedAttributes += '=' + options[attributeName];
+    }
+
+    this._cookieCache[rawKey] = value;
+    return (doc.cookie = key + '=' + value + stringifiedAttributes);
+  }
+
+  Cookies.prototype.get = function (key, options) {
+    var result
+      , options = options || {}
+      , rdecode = /(%[0-9A-Z]{2})+/g;
+
+    if (!key || options.bustCache) this._refresh();
+
+    if (this._cookieCache[key]) return this._cookieCache[key];
+    if (!key) result = {};
+
+    for (var i = 0; i < this._cookies.length; i++) {
+      var parts = this._cookies[i].split('=')
+        , cookie = parts.slice(1).join('=');
+
+      if (cookie.charAt(0) === '"') {
+        cookie = cookie.slice(1, -1);
+      }
+
+      try {
+        var name = parts[0].replace(rdecode, decodeURIComponent);
+        cookie = cookie.replace(rdecode, decodeURIComponent);
+
+        if (options.json) {
+          try {
+            cookie = JSON.parse(decodeURIComponent(cookie));
+          } catch (e) { }
+        }
+
+        if (key === name) {
+          result = cookie;
+          this._cookieCache[name] = cookie;
+          break;
+        }
+
+        if (!key) {
+          result[name] = cookie;
+          this._cookieCache[name] = cookie;
+        }
+      } catch (e) { }
+    }
+
+    return result;
+  }
+
+  Cookies.prototype.getJSON = function (key) {
+    return this.get(key, { bustCache: true, json: true });
+  }
+
+  Cookies.prototype.remove = function (key) {
+    if (this._cookieCache[key]) delete this._cookieCache[key];
+    this.set(key, '', { expires: -1 });
+  }
+
+  // ===========================================================================
+  // End Cookies API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // QueryString API functions.
+  // ===========================================================================
+
+  var QueryString = function (uri) {
+    if (!(this instanceof QueryString)) return new QueryString(uri);
+    if (!uri && uri !== '') uri = window.location.href;
+
+    var startIndex = uri.indexOf('?')
+      , endIndex = uri.indexOf('#')
+      , start = startIndex > -1 ? startIndex + 1 : 0
+      , end = endIndex > -1 ? endIndex : uri.length
+      , parts = uri.substring(start, end).split('&')
+      , storage = {};
+
+    if (startIndex > -1) {
+      for (var i = 0, len = parts.length; i < len; i++) {
+        var thisOne = parts[i].split('=')
+          , name = thisOne[0]
+          , value = thisOne.length > 1 ? thisOne[1] : '';
+
+        storage[name] = value;
+      }
+    }
+
+    this._cache = storage;
+  }
+
+  QueryString.prototype.get = function (key) {
+    return this._cache[key];
+  }
+
+  QueryString.prototype.set = function (key, value) {
+    if (!key) return;
+    this._cache[key] = value;
+  }
+
+  QueryString.prototype.load = function (keyVal) {
+    if (typeof keyVal !== 'object') return;
+
+    for (key in keyVal) {
+      if (keyVal.hasOwnProperty(key)) this.set(key, keyVal[key]);
+    }
+  }
+
+  QueryString.prototype.toString = function () {
+    var builder = [];
+
+    for (key in this._cache) {
+      if (this._cache.hasOwnProperty(key)) {
+        builder.push(key + '=' + encodeURIComponent(this._cache[key]));
+      }
+    }
+
+    return builder.join('&');
+  }
+
+  // ===========================================================================
+  // End QueryString API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // PixelTag API functions.
+  // ===========================================================================
+
+  var PixelTag = function (url, id) {
+    // cannot continue if no URL is provided.
+    if (!url) return;
+
+    if (!(this instanceof PixelTag)) return new PixelTag(url);
+
+    var img = doc.createElement('img');
+    img.src = url;
+    img.style = 'display:none;position:absolute;';
+    img.width = 0;
+    img.style.width = 0;
+    img.height = 0;
+    img.style.height = 0;
+    img.alt = "Marketing Pixel";
+    img.setAttribute('aria-hidden', true);
+
+    if (typeof id === 'string') img.id = id;
+
+    this._img = img;
+  }
+
+  PixelTag.prototype.appendTo = function (parent) {
+    if (!parent.appendChild) return;
+    parent.appendChild(this._img);
+  }
+
+  PixelTag.prototype.appendToBody = function () {
+    var body = doc.body || doc.getElementsByTagName('body')[0];
+    this.appendTo(body);
+  }
+
+  // ===========================================================================
+  // End PixelTag API functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Polyfills
+  // ===========================================================================
+
+  /**
+   * Due to some bad coding practice at BAC, true polyfills have adverse effects
+   * on other's code, particularly in some Borneo sites. Once Borneo support is
+   * no longer required, the following can be replaced.
+   */
+
+  var polyfills = {
+    object: {}
+    , array: {}
+    , string: {}
+  };
+
+  polyfills.object.assign = Object.assign;
+  if (typeof polyfills.object.assign != 'function') {
+    polyfills.object.assign = function (target, varArgs) { // .length of function is 2
+      'use strict';
+      if (target == null) { // TypeError if undefined or null
+        throw new TypeError('Cannot convert undefined or null to object');
+      }
+
+      var to = Object(target);
+
+      for (var index = 1; index < arguments.length; index++) {
+        var nextSource = arguments[index];
+
+        if (nextSource != null) { // Skip over if undefined or null
+          for (var nextKey in nextSource) {
+            // Avoid bugs when hasOwnProperty is shadowed
+            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+              to[nextKey] = nextSource[nextKey];
+            }
+          }
+        }
+      }
+
+      return to;
+    };
+  }
+
+  polyfills.array.find = function (ourArray, predicate) {
+    if (ourArray.find) return ourArray.find(predicate);
+
+    if (ourArray == null) {
+      throw new TypeError('array.find called on null or undefined');
+    }
+    if (typeof predicate !== 'function') {
+      throw new TypeError('predicate must be a function');
+    }
+
+    var list = Object(ourArray);
+    var length = list.length >>> 0;
+    var thisArg = arguments[1];
+    var value;
+
+    for (var i = 0; i < length; i++) {
+      value = list[i];
+      if (predicate.call(thisArg, value, i, list)) {
+        return value;
+      }
+    }
+    return undefined;
+  }
+
+  polyfills.array.map = function (arr, fun) {
+    if (arr.map) return arr.map(fun);
+
+    // Adapted from MDN
+    if (arr === void 0 || arr === null) {
+      throw new TypeError();
+    }
+
+    var t = Object(arr);
+    var len = t.length >>> 0;
+
+    if (typeof fun !== 'function') {
+      throw new TypeError();
+    }
+
+    var res = new Array(len);
+    var thisp = arguments[1];
+    for (var i = 0; i < len; i++) {
+      if (i in t) {
+        res[i] = fun.call(thisp, t[i], i, t);
+      }
+    }
+
+    return res;
+  }
+
+  /**
+   * Array.from polyfill adapted from MDN
+   */
+  polyfills.array.from = function (arrayLike) {
+    if (Array.from) return Array.from(arrayLike);
+
+    var toStr = Object.prototype.toString;
+    var maxSafeInteger = Math.pow(2, 53) - 1;
+    var items = Object(arrayLike);
+    var C = this;
+    var T;
+
+    var isCallable = function (fn) {
+      return typeof fn === 'function' || toStr.call(fn) === '[object Function]';
+    };
+
+    var toInteger = function (value) {
+      var number = Number(value);
+      if (isNaN(number)) return 0;
+      if (number === 0 || !isFinite(number)) return number;
+      return (number > 0 ? 1 : -1) * Math.floor(Math.abs(number));
+    };
+
+    var toLength = function (value) {
+      var len = toInteger(value);
+      return Math.min(Math.max(len, 0), maxSafeInteger);
+    };
+
+    if (arrayLike == null) {
+      throw new TypeError('Array.from requires an array-like object - not null or undefined');
+    }
+
+    var mapFn = arguments.length > 1 ? arguments[1] : void undefined;
+    if (typeof mapFn !== 'undefined') {
+      if (!isCallable(mapFn)) {
+        throw new TypeError('Array.from: when provided, the second argument must be a function');
+      }
+
+      if (arguments.length > 2) {
+        T = arguments[2];
+      }
+    }
+
+    var len = toLength(items.length);
+    var A = isCallable(C) ? Object(new C(len)) : new Array(len);
+    var k = 0;
+    var kValue;
+
+    while (k < len) {
+      kValue = items[k];
+      if (mapFn) {
+        A[k] = typeof T === 'undefined' ? mapFn(kValue, k) : mapFn.call(T, kValue, k);
+      } else {
+        A[k] = kValue;
+      }
+
+      k += 1;
+    }
+
+    A.length = len;
+    return A;
+  }
+
+  /**
+   * String.includes polyfill adapted from MDN
+   */
+  polyfills.string.includes = function (haystack, search, start) {
+    if (typeof start !== 'number') start = 0;
+    if (haystack.includes) return haystack.includes(search, start);
+    return (start + search.length > haystack.length) ? false : haystack.toString().indexOf(search, start) !== -1;
+  }
+
+  /**
+   * Nested object property existence check polyfill adapted from:
+   * https://github.com/you-dont-need/You-Dont-Need-Lodash-Underscore#_get
+   */
+
+  polyfills.object.exists = function (obj, path, defaultValue) {
+    function travel(regexp) {
+      return String.prototype.split.call(path, regexp).filter(Boolean).reduce(function (res, key) {
+        return res !== null && res !== undefined ? res[key] : res;
+      }, obj);
+    };
+
+    var result = travel(/[,[\]]+?/) || travel(/[,[\].]+?/);
+    return result === undefined || result === obj || result === null ? defaultValue : true;
+  }
+
+
+  // ===========================================================================
+  // End Polyfills
+  // ===========================================================================
+
+  // ===========================================================================
+  // customEvents functions.
+  // ===========================================================================
+
+  var _raiseCustomEvent = function (eventKey, details) {
+    _pushToDataCollector({
+      event: 'customEvent',
+      eventKey: eventKey,
+      options: details
+    });
+  }
+
+  // ===========================================================================
+  // End customEvents functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Log beacon functions.
+  // ===========================================================================
+
+  var _getBaseUrl = function () {
+    if (doc.baseURI) return doc.baseURI;
+
+    var pathArray = location.href.split('/')
+      , protocol = pathArray[0]
+      , host = pathArray[2]
+      , url = protocol + '//' + host + '/';
+
+    return url;
+  }
+
+  var _getBeaconUrl = function () {
+    var base = _getBaseUrl()
+      , splunkLogTransportUrl = env === 'prod' || base.indexOf('localhost') > -1
+        ? 'https://www.bankofamerica.com/content/images/ContextualSiteGraphics/bactm/bactm-transport.gif'
+        : base + 'content/images/ContextualSiteGraphics/bactm/bactm-transport.gif'
+      , baseUrl = splunkLogTransportUrl + '?d='
+      , q = [];
+
+    for (var i = 0, len = logQ.length; i < len; i++) {
+      var d = [];
+
+      if (!Array.isArray(logQ[i] || typeof logQ[i] === 'object')) {
+        for (var key in logQ[i]) {
+          d.push(encodeURIComponent(key) + '~' + encodeURIComponent(logQ[i][key]));
+        }
+      }
+
+      if (d.length > 0) q.push(d.join('~~'));
+    }
+
+    if (q.length > 0) return baseUrl + q.join('-_-');
+    else return baseUrl;
+  }
+
+  var _sendLogBeacon = function () {
+    if (logQ.length > 0) {
+      var _url = _getBeaconUrl();
+      if (navigator && typeof navigator.sendBeacon === 'function') {
+        navigator.sendBeacon(_url);
+      } else {
+        var client = new XMLHttpRequest();
+        client.open("POST", _url, false); // third parameter indicates sync xhr
+        client.setRequestHeader("Content-Type", "text/plain;charset=UTF-8");
+        client.send();
+      }
+    }
+  }
+
+  // ===========================================================================
+  // End log beacon functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Translation functions to support legacy bactm_ functions.
+  // ===========================================================================
+
+  /**
+   * Deprecated function for calling a pageview.
+   * @public
+   * @deprecated
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from digitalData.page.pageInfo[n] you'd call a pageview for.
+   * @returns {void}
+   */
+  var _beginDataCollection = function (pageInfoArrayIndex) {
+    _deprecationWarning('bactm_beginDataCollection', 'Consider using bactm.pageview() instead.');
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    pageview(pageInfoArrayIndex);
+  }
+
+  /**
+   * Deprecated function for calling a pageview.
+   * @public
+   * @deprecated
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd call a pageview for.
+   * @returns {void}
+   */
+  var _capturePageview = function (pageInfoArrayIndex) {
+    _deprecationWarning('bactm_capturePageview', 'Consider using bactm.pageview() instead.');
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    pageview(pageInfoArrayIndex);
+  }
+
+  /**
+   * Deprecated function for calling a productview.
+   * @public
+   * @deprecated
+   * @returns {void}
+   */
+  var _bactmProductView = function () {
+    _deprecationWarning('bactm_productView', 'Consider using bactm.productview() instead.');
+    productview();
+  }
+
+  /**
+   * Deprecated function for calling a pageview.
+   * @public
+   * @deprecated
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from
+   *                 digitalData.page.pageInfo[n] you'd call a pageview for.
+   * @param {boolean} [useSecondaryCategory] - Determine if to use
+   *                  digitalData.page.category.addlCategory instead of primaryCategory.
+   * @param {array} [segments] - Additional segments to be added to the pageview call.
+   * @returns {void}
+   */
+  var _captureAdditionalPageview = function (pageInfoArrayIndex, useSecondaryCategory, segments) {
+    _deprecationWarning('bactm_captureAddlPageview', 'Consider using bactm.pageview() instead.');
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+
+    var options = {};
+    options['categoryType'] = !useSecondaryCategory ? 'primary' : 'additional';
+    if (segments) options['segments'] = segments;
+
+    pageview(pageInfoArrayIndex, options);
+  }
+
+  /**
+   * Deprecated function for calling a pageview.
+   * @public
+   * @deprecated
+   * @param {string} associatedValue - Unique key to match key in lookup table
+   *                 to find the pageID for this pageview call.
+   * @returns {void}
+   */
+  var _captureDynamicPageview = function (associatedValue) {
+    _deprecationWarning('bactm_captureDynamicPageview', 'Consider using bactm.pageview(associatedValue, { lookupType: \'associatedValue\' }) instead.');
+    pageview(associatedValue, { lookupType: 'associatedValue' });
+  }
+
+  /**
+   * Deprecated function no longer has any functional use as data collection
+   * libraries now load asynchronously via tag manager.
+   * @public
+   * @deprecated
+   * @returns {void}
+   */
+  var _loadDataCollection = function () {
+    _deprecationWarning('bactm_loadDataCollection', 'Data collection libraries are now loaded asynchronously via tag manager.');
+  }
+
+  /**
+   * Deprecated function to add products to the DDO without needing to manage the DDO structure.
+   * Does not add if we find a product with a matching product ID already in the DDO.
+   * @public
+   * @param {string|number} productID - Unique identifier for the product.
+   * @param {string} productName - Friendly name of the product.
+   * @param {string} productCategory - Category product belongs to.
+   * @returns {void}
+   */
+  var _bactmAddProducts = function (productID, productName, productCategory) {
+    _deprecationWarning('bactm_addProducts', 'Consider using bactm.addProducts() instead.');
+
+    var product = {
+      'productID': productID
+      , 'productName': productName
+      , 'productCategory': productCategory
+    };
+
+    addProducts([product]);
+  }
+
+  /**
+   * Deprecated function that takes a segment string or array of segment strings and adds them to the
+   * digitalData.page.pageInfo[n].segmentValue. If segment already exists, updates the value.
+   *
+   * If digitalData.disable_pageviewonload is true, go ahead and call a pageview with this page.
+   * Support temporarily added to call pageview if utag_data.cm_Segmentation_Value is true.
+   * @public
+   * @param {string|array} segmentValues - Array of or single key/value string(s) seperated by an underscore (e.g.: ['olbc_Y', 'st_NC'], 'olbc_N').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {void}
+   */
+  var _bactmAddSegmentationValues = function (segmentValues, pageInfoArrayIndex) {
+    _deprecationWarning('bactm_addSegmentationValues', 'Consider using bactm.addManySegmentValues() or pageview() instead.');
+
+    addManySegmentValues(segmentValues, pageInfoArrayIndex);
+
+    if ((typeof utag_data !== 'undefined' && _toLowerCaseString(utag_data.cm_Segmentation_Value) === "true") || _toLowerCaseString(ddo.get('disable_pageviewonload')) === 'true') {
+      pageview(pageInfoArrayIndex);
+    }
+  }
+
+  // ===========================================================================
+  // End Translation functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Public functions.
+  // ===========================================================================
+
+  /**
+   * Captures data from digitalData object to call a Coremetrics pageview and adds
+   * to the dataCollector queue for processing.
+   *
+   * Captures data from digitalData object found by pageInfo array index, pageID,
+   * or a unique associated value.
+   *
+   * Options object allows for selecting pageInfo lookupType, adding segments,
+   * choosing which category to use from the digitalData object, and indicating if
+   * this is an app pageview requiring dynamic pageID.
+   *
+   * Usage: bactm.pageview(5, { segments: ['olbc_N', 'st_NC'], categoryType: 'primary' });
+   * Usage: bactm.pageview('this_is:my:PageID');
+   * Usage: bactm.pageview('this_is:my:PageID', { lookupType: 'pageID' });
+   * Usage: bactm.pageview('SomeValue', { lookupType: 'associatedValue' });
+   * Usage: bactm.pageview(2, { isApp: true });
+   * Usage: bactm.pageview();
+   *
+   * Pageview calls with the options.isApp property set to true will process any
+   * conversion events setup in utag_data.App_Conversion_Settings lookup table.
+   *
+   * @public
+   * @param {string|number} [pageInfoKey] - Value indicating how to find the pageInfo
+   *      from the digitalData object. Can be the index of the array, pageID, or the
+   *      associated value.
+   * @param {object} [options] - Object of options for this pageview call. Valid
+   *      properties include segmentValues {array}, categoryType {string}, lookupType {string},
+   *      isSaveAndReturn {bool}, saveAndReturnId {string}, applicationId {string}
+   *      cartProducts {array} and isApp {bool}.
+   * @returns {void}
+   */
+  var pageview = function (pageInfoKey, options) {
+    _log('Pageview event added to the dataCollector.', LOG_LEVEL.DEBUG);
+
+    try {
+      if (pageInfoKey !== undefined && typeof pageInfoKey !== 'string' && digitalData && digitalData.page && digitalData.page.pageInfo
+          && modals.indexOf(digitalData.page.pageInfo[pageInfoKey].pageID) > -1) {
+          if (options === undefined) options = {};
+          options.isModal = true;
+      }
+
+      _pushToDataCollector({
+        'event': 'pageview',
+        'pageInfoKey': pageInfoKey,
+        'options': options
+      });
+
+    } catch (error) {
+      console.log('bactm.pageview error: ', error);
+      reportError(error, { record: true })
+    }
+  };
+
+
+  /**
+   * Captures all products out of the digitalData.product array and fires a Coremetrics
+   * Productview tag for each one where productviewTagFired property is false. Once tag has
+   * fired, productviewTagFired property is set to true, ensuring duplicate Productview tags
+   * are not fired.
+   * @public
+   * @returns {void}
+   */
+  var productview = function () {
+    _log('Productview event added to the dataCollector.', LOG_LEVEL.DEBUG);
+
+    _pushToDataCollector({
+      'event': 'productview'
+    });
+  }
+
+  /**
+   * Captures all products out of the digitalData.cart.item array and fires a Coremetrics
+   * Shop Action 5 tag for each one where cartViewTagFired property is false. Once tag has
+   * fired, cartViewTagFired property is set to true, ensuring duplicate Shop Action 5 tags
+   * are not fired for a single product.
+   * @public
+   * @returns {void}
+   */
+  var cartView = function (products) {
+    _log('CartView event added to the dataCollector.', LOG_LEVEL.DEBUG);
+
+    _pushToDataCollector({
+      'event': 'cartview',
+      data: {
+        products: products
+      }
+    });
+  }
+
+  /**
+   * Captures all products out of the digitalData.cart.item array and fires a Coremetrics
+   * Shop Action 9 tag for each one where cartViewTagFired property is true. Once tag has
+   * fired, cartViewTagFired property is set to false, ensuring additional Shop Action 5 tags
+   * can be fired.
+   * @public
+   * @returns {void}
+   */
+  var productsPurchased = function () {
+    _log('ProductsPurchased event added to the dataCollector.', LOG_LEVEL.DEBUG);
+    const products = digitalData.cart.item.filter(product => product.attributes.cartViewTagFired !== 'false');
+
+    _pushToDataCollector({
+      'event': 'productsPurchased',
+      data: {
+        products: products
+      }
+    });
+  }
+
+  /**
+   * Sends a conversion event tag to Coremetrics.
+   * @public
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {object} conversion - Object with the conversion event details.
+   * @param {string} conversion.eventName - The unique identifier for the type of conversion event.
+   * @param {string} conversion.actionType - Indicates whether the conversion event was initiated or successfully completed. Valid values: initiate|complete
+   * @param {string} conversion.category - Allows you to group events into a category.
+   * @returns {void}
+   */
+  var conversion = function (conversion) {
+    _log('Conversion event added to the dataCollector.', LOG_LEVEL.DEBUG);
+
+    _pushToDataCollector({
+      'event': 'conversion',
+      'eventName': conversion.eventName,
+      'actionType': conversion.actionType,
+      'category': conversion.category
+    });
+  }
+
+  /**
+   * Add products to the DDO without needing to manage the DDO structure.
+   * Does not add if we find a product with a matching product ID already in the DDO.
+   * @public
+   * @param {string|number} productID - Unique identifier for the product.
+   * @param {string} productName - Friendly name of the product.
+   * @param {string} productCategory - Category product belongs to.
+   * @returns {void}
+   */
+  var addProducts = _addProducts;
+
+  /**
+   * Add products to the digitalData object (DDO) cart without needing to manage the DDO structure.
+   * Does not add if we find a product with a matching product ID already in the DDO.
+   * @public
+   * @param {object|array} products
+   * @param {string|number} product.productID - Unique identifier for the product.
+   * @param {string} product.productName - Friendly name of the product.
+   * @param {string} product.productCategory - Category product belongs to.
+   * @returns {void}
+   */
+  var addProductsToCart = _addProductsToCart;
+
+  /**
+   * Sets the value of a single segment within digitalData.page.pageInfo[n].segmentValue
+   found by key. If key does not exist, a new segment will be created.
+   * @public
+   * @param {string} key - Key is the entire string up unti the first underscore in a segment section (e.g.: 'st' in '|st_NC|').
+   * @param {string} value - Vaue is the entire string after the first underscore in a segment section (e.g.: 'NC' in '|st_NC|').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {void}
+   */
+  var addSegmentValue = _setSegmentValue;
+
+  /**
+   * Takes a segment string or array of segment strings and adds them to the
+   * digitalData.page.pageInfo[n].segmentValue. If segment already exists,
+   * updates the value.
+   * @public
+   * @param {string|array} segmentValues - Array of or single key/value string(s) seperated by an underscore (e.g.: ['olbc_Y', 'st_NC'], 'olbc_N').
+   * @param {number} [pageInfoArrayIndex=0] - Index of the pageInfo array from digitalData.page.pageInfo[n] you'd like the get the segment values from.
+   * @returns {void}
+   */
+  var addManySegmentValues = function (segmentValues, pageInfoArrayIndex) {
+    if (!_isValidPageInfoArrayIndex(pageInfoArrayIndex)) pageInfoArrayIndex = 0;
+    if (!Array.isArray(segmentValues)) segmentValues = [segmentValues];
+
+    for (var i = 0, segmentsLen = segmentValues.length; i < segmentsLen; i++) {
+      var segment = _getSegmentKeyValue(_trim(segmentValues[i]));
+      addSegmentValue(segment.key, segment.value, pageInfoArrayIndex);
+    }
+  }
+
+  /**
+   * Sends a Custom Error tag for the current page to Coremetrics.
+   * @public
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string|number} errorCode - A unique identifier for the Error message.
+   * @param {string} errorMessage - The text of the message that is displayed to the user.
+   * @returns {void}
+   */
+  var customError = function (errorCode, errorMessage) {
+    var eventInfo = {
+      'event': 'customError'
+      , 'errorCode': errorCode
+      , 'errorMessage': errorMessage
+    };
+
+    _pushToDataCollector(eventInfo);
+  }
+
+  /**
+   * Sends a Manual Link Click tag on the current page to Coremetrics.
+   * @public
+   * @requires eluminate.js
+   * @requires cmdatatagutils.js
+   * @param {string} href - The href for the hyperlink.
+   * @param {string} linkname - The unique descriptive identifier for the link.
+   * @returns {void}
+   */
+  var manualLinkClick = function (href, linkname) {
+    var eventInfo = {
+      'event': 'manualLinkClick'
+      , 'href': href
+      , 'linkname': linkname
+    };
+
+    _pushToDataCollector(eventInfo);
+  }
+
+  /**
+   * Reverts the pageID Coremetrics is currently reporting on to the previous pageID.
+   * For example, to be called when modal layer that called a second Pageview tag in
+   * a single DOM instance is closed.
+   * @public
+   * @requires eluminate.js
+   * @param {number} [pageInfoArrayIndex] - Index of the pageInfo array from
+   *                  digitalData.page.pageInfo[n] you'd like the get the pageID from.
+   * @returns {void}
+   */
+  var revertToPrevPageID = function (pageInfoArrayIndex) {
+    if (typeof cG7 === 'undefined') {
+      _log('cG7 is undefined. Unable to call revertToPrevPageID() until Coremetrics libraries are ready.', LOG_LEVEL.WARN);
+    } else {
+      _revertToPreviousPageID(pageInfoArrayIndex);
+    }
+  }
+
+  /**
+   * reportError - reporting Errors to the data collector to make functions fail silently
+   * @public
+   * @param {object} - Error data that is caught from a throw or failed try
+   * @returns {void}
+   */
+  var reportError = function (error, options) {
+    try {
+      if (typeof error === "object" && error.name && error.message && error.stack && (window.bactm_envSelector !== "prod" || window.location.href.indexOf('debug=true') > -1)) {
+        window.reportError(error)
+        // Commented out the code below due to traffic concerns, should revisit if Celebrus can handle this traffic.
+        if (options?.record === true) {
+          var spliceErrorString = function spliceErrorString(errorString, errArray) {
+              if (!errArray) errArray = [];
+              var modifiedErrorString = errorString.slice(errorString.indexOf('at ') + 3);
+              var functionName = modifiedErrorString.slice(0, modifiedErrorString.indexOf(' '));
+          var location = modifiedErrorString.slice(modifiedErrorString.indexOf('(') + 1, modifiedErrorString.indexOf(')'));
+          modifiedErrorString = modifiedErrorString.substring(modifiedErrorString.indexOf(')'));
+          errArray.push({
+            functionName: functionName,
+            location: location
+          });
+
+          if (modifiedErrorString.indexOf(')') > -1) {
+            spliceErrorString(modifiedErrorString, errArray);
+          }
+
+          return errArray;
+        };
+
+        var errCategory = error.name;
+        var errMessage = error.message;
+        var errString = error.stack.toString();
+        var errStack = spliceErrorString(errString);
+        var errData = {
+            errCategory: errCategory,
+            errMessage: errMessage,
+            errStack: errStack
+          };
+          var dataToReport = {
+              event: 'Bactm_Error',
+              data: errData
+            };
+            
+            _pushToDataCollector(dataToReport);
+          }
+          }
+        } catch (error) {
+          if (typeof error === "object" && error.name && error.message && error.stack) {
+        window.reportError(error);
+      }
+    }
+  };
+
+  /**
+   * chat_dataCollector - Array that logs all genesys events
+   * @public
+   * @returns {void}
+   */
+  var chat_dataCollector = [];
+
+  /**
+   * Rescans the DOM and adds event handlers to anchor tags for Automatic Link Click tag
+   * functionality.
+   * @public
+   * @requires eluminate.js
+   * @returns {void}
+   */
+  var rescanDOM = function () {
+    _rescanDOM();
+  }
+
+  /**
+   * Sends data to a transparent gif on the webservers so data can be pulled from the server
+   * logs via Splunk.
+   * @public
+   * @returns {void}
+   */
+  var log = function (data) {
+    var eventInfo = {
+      'event': 'log'
+      , 'data': data
+    };
+
+    var _timestamp = function () {
+      var e = new Date;
+      return e.getTime() - e.getTimezoneOffset()
+    }
+
+    if (!Array.isArray(data) && typeof data === 'object' && !('ts' in data)) data.ts = _timestamp();
+
+    _pushToDataCollector(eventInfo);
+  }
+
+  // ===========================================================================
+  // End public functions.
+  // ===========================================================================
+
+  // Catch cases where libraries have loaded after the browser dom ready event has already occurred.
+  // Enables bactm.ready(); functionality.
+  if (doc.readyState === "complete" || (doc.readyState !== "loading" && !doc.documentElement.doScroll)) {
+    _onDomReady();
+  } else {
+    // Use the handy event callback
+    doc.addEventListener("DOMContentLoaded", _domLoadComplete);
+  }
+
+  // "Core" functions which will always be exported and available no matter any other settings.
+  var core = {
+    'env': env
+    , 'plugins': plugins
+    , 'ready': _ready
+    , 'on': _listener
+    , 'trigger': _trigger
+    , 'Store': Store
+    , 'Cookies': Cookies
+    , 'PixelTag': PixelTag
+    , 'Ajax': Ajax
+    , 'QueryString': QueryString
+    , 'SudoPromise': SudoPromise
+    , 'customEvent': _raiseCustomEvent
+    , 'ddo': ddo
+    , 'polyfills': polyfills
+    , 'log': log
+    , 'setApplicationDetails': _setApplicationDetails
+    , 'getApplicationId': _getApplicationId
+    , 'setPrivacy': _setPrivacy
+    , 'decomposeUri': decomposeUri
+    , 'reportError': reportError
+    , 'chat_dataCollector': chat_dataCollector
+    , 'pageID': _pageIDHistory
+    , 'scriptReady': _scriptReady
+
+    // Private functions exposed for plugins to access.
+    , '_getPageInfo': _getPageInfo
+    , '_isValidPageInfoArrayIndex': _isValidPageInfoArrayIndex
+    , '_log': _log
+    , '_readCookie': _readCookie
+    , '_asArray': _asArray
+    , '_sendLogBeacon': _sendLogBeacon
+  }
+
+  // Export public functions.
+  var bactm = {
+    'pageview': pageview
+    , 'addManySegmentValues': addManySegmentValues
+    , 'addProducts': addProducts
+    , 'addProductsToCart': addProductsToCart
+    , 'addSegmentValue': addSegmentValue
+    , 'cartView': cartView
+    , 'conversion': conversion
+    , 'customError': customError
+    , 'manualLinkClick': manualLinkClick
+    , 'rescanDOM': rescanDOM
+    , 'productsPurchased': productsPurchased
+    , 'productview': productview
+    , 'revertToPrevPageID': revertToPrevPageID
+    , 'impressions': _impressions
+  }
+
+  // Merge in our core functions to be exposed publically.
+  for (var key in core) {
+    if (core.hasOwnProperty(key)) bactm[key] = core[key];
+  }
+
+  // Export legacy functions to the window for backwards compatability.
+  win['cm_NormalizeList'] = 'sessionid=;pageID=;accessToken=;token=;adx=;features=;request_locale=;deviceCode=;phoneNumber=;emailAddress=;callback=;divId=;qry=;tid=;dropdown-loan=;gclid=;currencyInputField=;rq=;searchText=;';
+  win['bactm_evtSel'] = 1;
+  win['bactm_addSegmentationValues'] = _bactmAddSegmentationValues;
+
+  win['bactm_beginDataCollection'] = _beginDataCollection;
+  win['bactm_capturePageview'] = _capturePageview;
+  win['bactm_captureAddlPageview'] = _captureAdditionalPageview;
+  win['bactm_captureDynamicPageview'] = _captureDynamicPageview;
+
+  win['bactm_loadDataCollection'] = _loadDataCollection;
+  win['bactm_addProducts'] = _bactmAddProducts;
+  win['bactm_captureCustomError'] = customError;
+  win['bactm_createManualLinkClickTag'] = manualLinkClick;
+  win['bactm_restorePageID'] = revertToPrevPageID;
+
+  win['bactm_productView'] = _bactmProductView;
+
+
+  // Run our initialization function.
+  _init();
+
+  return bactm;
+});
+
+} catch(e){ console.log(e) } }catch(e){console.log(e);}
+
+if(!utag_condload){try{ try{
+(function(parent, name, context, definition) {
+  // Check if is used inside a "modern" browser, if not, return
+  if (!context || !context[parent] || !Array.prototype.filter) {
+    return;
+  }
+
+  context[parent]['plugins'][name] = definition();
+})('bactm', 'pixelTag', typeof window !== 'undefined' ? window : null, function() {
+
+  var parent = 'bactm',
+    ba = window[parent],
+    win = window,
+    doc = document || {},
+    version = '1.0.1',
+    ddo = win.digitalData,
+    LOG_LEVEL = {
+      OFF: 10,
+      FATAL: 5,
+      ERROR: 4,
+      WARN: 3,
+      INFO: 2,
+      DEBUG: 1
+    };
+
+  // We have no DDO, exit immediately.
+  if (!ddo) return;
+
+  // ===========================================================================
+  // Core functions.
+  // ===========================================================================
+
+  var _firePixelTag = function(url, opt) {
+    opt = opt || {};
+    startDt = opt.startDt ? new Date(opt.startDt) : new Date('1-1-1970');
+    endDt = opt.endDt ? new Date(opt.endDt) : new Date('1-1-2999');
+
+    if (!(Date.now() > startDt && Date.now() < endDt)) return 0;
+
+    url = (typeof url == "string" || url.length == 0) ? new Array(url) : url;
+
+    url.forEach(function(url, i) {
+      if (_verifyProtocol(url)){
+        if (opt.cacheBuster) url = _cacheBuster(url);
+
+        var tag = new bactm.PixelTag(url, i);
+        if (typeof opt.parent == 'undefined') tag.appendToBody();
+        else tag.appendTo(opt.parent);
+
+        ba._log('PixelTag fired with ID: ' + i, LOG_LEVEL.INFO);
+      }
+    })
+  }
+
+  // ===========================================================================
+  // End Core functions.
+  // ===========================================================================
+
+  // ===========================================================================
+  // Helper functions.
+  // ===========================================================================
+
+  var _verifyProtocol = function(url) {
+    if (url.substring(0, 2) == "//") return 1;
+    return (url.substring(0, 5) != "https" && location.protocol == "https:") ? 0 : 1;
+  }
+
+  var _appendQueryString = function(url, key, val) {
+    var delimeter = (url.indexOf('?') > -1) ? "&" : "?";
+    url = url + delimeter + encodeURIComponent(key) + "=" + encodeURIComponent(val);
+    return url;
+  }
+
+  var _cacheBuster = function(url) {
+    url = _appendQueryString(url, "cb", Date.now())
+    return url;
+  }
+
+  // ===========================================================================
+  // End helper functions.
+  // ===========================================================================
+
+  /**
+   * Initialization function fired as soon as library loads.
+   *
+   * @private
+   * @returns {void}
+   */
+  var _init = function() {
+    ba._log('pixelTag plugin v' + version + ' initializing.', LOG_LEVEL.INFO);
+    // ba.ready();
+    // _firePixelTag(digitalData.page.attributes.pixelTag, {
+    //   "cb": true
+    // });
+  }
+
+  /**
+   * Initialize our plugin on library load.
+   */
+  _init();
+
+  /**
+   * Functions to return publicly.
+   */
+  return {
+    'firePixelTag': _firePixelTag
+  };
+
+});
+
+} catch(e){ console.log(e) } }catch(e){console.log(e);}}
+
+if (typeof utag == "undefined" && !utag_condload) {
+  var utag = {
+    id:"bofa.chat",
+    o:{},
+    sender: {},
+    send: {},
+    rpt: {
+      ts: {
+        a: new Date()
+      }
+    },
+    dbi: [],
+    db_log : [],
+    loader: {
+      q: [],
+      lc: 0,
+      f: {},
+      p: 0,
+      ol: 0,
+      wq: [],
+      lq: [],
+      bq: {},
+      bk: {},
+      rf: 0,
+      ri: 0,
+      rp: 0,
+      rq: [],
+      ready_q : [], 
+      sendq :{"pending":0},
+      run_ready_q : function(){
+        for(var i=0;i<utag.loader.ready_q.length;i++){
+          utag.DB("READY_Q:"+i);
+          try{utag.loader.ready_q[i]()}catch(e){utag.DB(e)};
+        }
+      },
+      lh: function(a, b, c) {
+        a = "" + location.hostname;
+        b = a.split(".");
+        c = (/\.co\.|\.com\.|\.org\.|\.edu\.|\.net\.|\.asn\.|\...\.jp$/.test(a)) ? 3 : 2;
+        return b.splice(b.length - c, c).join(".");
+      },
+      WQ: function(a, b, c, d, g) {
+        utag.DB('WQ:' + utag.loader.wq.length);
+        try {
+          // this picks up a utag_data items added after utag.js was loaded
+          // Gotcha: Data layer set after utag.js will not overwrite something already set via an extension.  Only "new" values are copied from utag_data
+          // for case where utag_data is set after utag.js is loaded
+          if(utag.udoname && utag.udoname.indexOf(".")<0){
+            utag.ut.merge(utag.data,window[utag.udoname],0);
+          }
+
+          // TBD: utag.handler.RE('view',utag.data,"bwq");
+          // process load rules again if this flag is set
+          if(utag.cfg.load_rules_at_wait){
+            utag.handler.LR(utag.data);
+          }
+        } catch (e) {utag.DB(e)};
+	
+	d=0;
+        g=[]; 
+        for (a = 0; a < utag.loader.wq.length; a++) {
+          b = utag.loader.wq[a];
+	  b.load = utag.loader.cfg[b.id].load;
+          if (b.load == 4){
+            //LOAD the bundled tag set to wait here
+            this.f[b.id]=0;
+            utag.loader.LOAD(b.id)
+          }else if (b.load > 0) {
+            g.push(b);
+            //utag.loader.AS(b); // moved: defer loading until flags cleared
+	    d++;
+          }else{
+            // clear flag for those set to wait that were not actually loaded
+            this.f[b.id]=1;
+          }
+        }
+        for (a = 0; a < g.length; a++) {
+          utag.loader.AS(g[a]);
+        }
+
+	if(d==0){
+	  utag.loader.END();
+	}
+      },
+      AS: function(a, b, c, d) {
+        utag.send[a.id] = a;
+        if (typeof a.src == 'undefined' || !utag.ut.hasOwn(a,'src')) {
+          a.src = utag.cfg.path + ((typeof a.name != 'undefined') ? a.name : 'ut' + 'ag.' + a.id + '.js')
+        }
+        a.src += (a.src.indexOf('?') > 0 ? '&' : '?') + 'utv=' + (a.v?utag.cfg.template+a.v:utag.cfg.v);
+        utag.rpt['l_' + a.id] = a.src;
+        b = document;
+        this.f[a.id]=0;
+        if (a.load == 2) {
+          utag.DB("Attach sync: "+a.src);
+          a.uid=a.id;
+          b.write('<script id="utag_' + a.id + '" src="' + a.src + '"></scr' + 'ipt>')
+          if(typeof a.cb!='undefined')a.cb();
+        } else if(a.load==1 || a.load==3) {
+          if (b.createElement) {
+            c = 'utag_bofa.chat_'+a.id;
+            if (!b.getElementById(c)) {
+	      d = {
+	        src:a.src,
+		id:c,
+                uid:a.id,
+		loc:a.loc
+              }
+              if(a.load == 3){d.type="iframe"};
+	      if(typeof a.cb!='undefined')d.cb=a.cb;
+              utag.ut.loader(d);
+            }
+          }
+        }
+      },
+      GV: function(a, b, c) {
+        b = {};
+        for (c in a) {
+          if (a.hasOwnProperty(c) && typeof a[c] != "function") b[c] = a[c];
+        }
+        return b
+      },
+      OU: function(tid, tcat, a, b, c, d, f, g) {
+        g = {};
+        utag.loader.RDcp(g);
+        try {
+          if (typeof g['cp.OPTOUTMULTI'] != 'undefined') {
+            c = utag.loader.cfg;
+            a = utag.ut.decode(g['cp.OPTOUTMULTI']).split('|');
+            for (d = 0; d < a.length; d++) {
+              b = a[d].split(':');
+              if (b[1] * 1 !== 0) {
+                if (b[0].indexOf('c') == 0) {
+                  for (f in utag.loader.GV(c)) {
+                    if (c[f].tcat == b[0].substring(1)) c[f].load = 0;
+                    // if we know the tid but don't know the category and this is a category opt out...
+                    if (c[f].tid == tid && c[f].tcat == b[0].substring(1)) return true; 
+                  }
+                  if (tcat == b[0].substring(1)) return true;
+                } else if (b[0] * 1 == 0) {
+                  utag.cfg.nocookie = true
+                } else {
+                  for (f in utag.loader.GV(c)) {
+                    if (c[f].tid == b[0]) c[f].load = 0
+                  }
+                  if (tid == b[0]) return true;
+                }
+              }
+            }
+          }
+        } catch (e) {utag.DB(e)}
+        return false;
+      },
+      RDdom: function(o){
+        var d = document || {}, l = location || {};
+        o["dom.referrer"] = d.referrer;
+        o["dom.title"] = "" + d.title;
+        o["dom.domain"] = "" + l.hostname;
+        o["dom.query_string"] = ("" + l.search).substring(1);
+        o["dom.hash"] = ("" + l.hash).substring(1);
+        o["dom.url"] = "" + d.URL;
+        o["dom.pathname"] = "" + l.pathname;
+        o["dom.viewport_height"] = window.innerHeight || (d.documentElement?d.documentElement.clientHeight:960);
+        o["dom.viewport_width"] = window.innerWidth || (d.documentElement?d.documentElement.clientWidth:960);
+      },
+      RDcp: function(o, b, c, d){
+        b = utag.loader.RC();
+        for (d in b) {
+          if (d.match(/utag_(.*)/)) {
+            for (c in utag.loader.GV(b[d])) {
+              o["cp.utag_" + RegExp.$1 + "_" + c] = b[d][c];
+            }
+          }
+        }
+        for (c in utag.loader.GV((utag.cl && !utag.cl['_all_']) ? utag.cl : b)) {
+          if (c.indexOf("utag_") < 0 && typeof b[c] != "undefined") o["cp." + c] = b[c];
+        }
+      },
+      RDqp: function(o, a, b, c){
+        a = location.search + (location.hash+'').replace("#","&");
+        if(utag.cfg.lowerqp){a=a.toLowerCase()};
+        if (a.length > 1) {
+          b = a.substring(1).split('&');
+          for (a = 0; a < b.length; a++) {
+            c = b[a].split("=");
+            if(c.length>1){
+              o["qp." + c[0]] = utag.ut.decode(c[1])
+            }
+          }
+        }
+      },
+      RDmeta: function(o, a, b, h){
+        a = document.getElementsByTagName("meta");
+        for (b = 0; b < a.length; b++) {
+          try{
+            h = a[b].name || a[b].getAttribute("property") || ""; 
+          }catch(e){h="";utag.DB(e)};
+          if (utag.cfg.lowermeta){h=h.toLowerCase()};
+          if (h != ""){o["meta." + h] = a[b].content}
+        }
+      },
+      RDva: function(o){
+        // Read visitor attributes in local storage
+        var readAttr = function(o, l ){
+          var a = "", b;
+          a = localStorage.getItem(l);
+          if(!a || a=="{}")return;
+          b = utag.ut.flatten({va : JSON.parse(a)});
+          utag.ut.merge(o,b,1);
+        }
+        try{
+          readAttr(o, "tealium_va" );
+          readAttr(o, "tealium_va_" + o["ut.account"] + "_" + o["ut.profile"] );
+        }catch(e){ utag.DB(e) }
+      },
+      RDut: function(o, a){
+        // Add built-in data types to the data layer for use in mappings, extensions and RDva function.
+        var t = {};
+        var d = new Date();
+        var m = ( utag.ut.typeOf(d.toISOString) == "function" );
+        o["ut.domain"] = utag.cfg.domain;
+        o["ut.version"] = utag.cfg.v;
+        // i.e. "view" or "link"
+        t["tealium_event"] = o["ut.event"] = a || "view";
+        t["tealium_visitor_id"] = o["ut.visitor_id"]=o["cp.utag_main_v_id"];
+        t["tealium_session_id"] = o["ut.session_id"]=o["cp.utag_main_ses_id"];
+        t["tealium_session_number"] = o["cp.utag_main__sn"];
+        t["tealium_session_event_number"] = o["cp.utag_main__se"];
+        try{
+          t["tealium_datasource"] = utag.cfg.datasource;
+          t["tealium_account"] = o["ut.account"] = utag.cfg.utid.split("/")[0];
+          t["tealium_profile"] = o["ut.profile"] = utag.cfg.utid.split("/")[1];
+          t["tealium_environment"] = o["ut.env"] = "prod";
+        }catch(e){ utag.DB(e) }
+
+        t["tealium_random"] = Math.random().toFixed(16).substring(2);
+        t["tealium_library_name"] = "ut"+"ag.js";
+        t["tealium_library_version"] = ( utag.cfg.template + "0" ).substring(2);
+        t["tealium_timestamp_epoch"] = Math.floor( d.getTime() / 1000 );
+        t["tealium_timestamp_utc"] = ( m ? d.toISOString() : "");
+        // Adjust date to local time
+        d.setHours( d.getHours() - ( d.getTimezoneOffset() / 60 ) );
+        t["tealium_timestamp_local"] = ( m ? d.toISOString().replace( "Z","" ) : "" );
+
+        // Any existing data elements with "tealium_" will not be overwritten
+        utag.ut.merge( o, t, 0 );
+      },
+      RDses: function( o, a, c ) {
+        a = (new Date()).getTime();
+        c = ( a + parseInt( utag.cfg.session_timeout ) ) + "";
+
+        // cp.utag_main_ses_id will not be in the data layer when it has expired or this is first page view of all time
+	if ( !o["cp.utag_main_ses_id"] ) {
+          o["cp.utag_main_ses_id"] = a + "";
+          o["cp.utag_main__ss"] = "1";
+          o["cp.utag_main__se"] = "1";
+          o["cp.utag_main__sn"] = ( 1 + parseInt( o["cp.utag_main__sn"] || 0 ) ) + "";
+        } else {
+          o["cp.utag_main__ss"] = "0";
+          o["cp.utag_main__se"] = ( 1 + parseInt( o["cp.utag_main__se"] || 0 ) ) + "";
+        }
+
+        o["cp.utag_main__pn"] = o["cp.utag_main__pn"] || "1";
+        o["cp.utag_main__st"] = c;
+
+        utag.loader.SC( "utag_main", { "_sn": ( o["cp.utag_main__sn"] || 1 ), "_se": o["cp.utag_main__se"], "_ss": o["cp.utag_main__ss"], "_st": c, "ses_id": ( o["cp.utag_main_ses_id"] || a ) + ";exp-session", "_pn": o["cp.utag_main__pn"] + ";exp-session" } );
+      },
+      RDpv: function( o ) {
+        if ( typeof utag.pagevars == "function" ) {
+          utag.DB("Read page variables");
+          utag.pagevars(o);
+        }
+      },
+      RDlocalStorage: function(o) {
+        if (utag.cfg.ignoreLocalStorage) {
+          return;
+        }
+        Object.keys(window.localStorage).forEach(function(localStorageKey) {
+          o["ls." + localStorageKey] = window.localStorage[localStorageKey];
+        });
+      },
+      RDsessionStorage: function(o) {
+        if (utag.cfg.ignoreSessionStorage) {
+          return;
+        }
+        Object.keys(window.sessionStorage).forEach(function(sessionStorageKey) {
+          o["ss." + sessionStorageKey] = window.sessionStorage[sessionStorageKey];
+        });
+      },
+      RD: function( o, a ) {
+        utag.DB("utag.loader.RD");
+        utag.DB(o);
+
+        utag.loader.RDcp(o);
+
+        if ( !utag.loader.rd_flag ) {
+          utag.loader.rd_flag = 1;
+          o["cp.utag_main_v_id"] = o["cp.utag_main_v_id"] || utag.ut.vi((new Date()).getTime());
+          o["cp.utag_main__pn"] = ( 1 + parseInt( o["cp.utag_main__pn"] || 0 ) ) + "";
+          // the _st value is not-yet-set for first page view so we'll need wait to write in _pn value (which is exp-session)
+          // The SC function expires (removes) cookie values that expired with the session
+          utag.loader.SC( "utag_main", { "v_id": o["cp.utag_main_v_id"] } );
+          utag.loader.RDses(o);
+        }
+
+        // first utag.track call for noview should not clear session start (_ss) value
+        if(a && !utag.cfg.noview)utag.loader.RDses(o);
+        utag.loader.RDqp(o);
+        utag.loader.RDmeta(o);
+        utag.loader.RDdom(o);
+        utag.loader.RDut(o, a || "view");
+        utag.loader.RDpv(o);
+        utag.loader.RDva(o);
+        utag.loader.RDlocalStorage(o);
+        utag.loader.RDsessionStorage(o);
+      },
+      RC: function(a, x, b, c, d, e, f, g, h, i, j, k, l, m, n, o, v, ck, cv, r, s, t) {
+        o = {};
+        b = ("" + document.cookie != "") ? (document.cookie).split("; ") : [];
+        r = /^(.*?)=(.*)$/;
+        s = /^(.*);exp-(.*)$/;
+        t = (new Date()).getTime();
+        for (c = 0; c < b.length; c++) {
+          if (b[c].match(r)) {
+            ck = RegExp.$1;
+            cv = RegExp.$2;
+          }
+          e = utag.ut.decode(cv);
+          if (typeof ck!="undefined"){
+            if (ck.indexOf("ulog") == 0 || ck.indexOf("utag_") == 0) {
+              e = cv.split("$");
+              g = [];
+              j = {};
+              for (f = 0; f < e.length; f++) {
+                try{
+                  g = e[f].split(":");
+                  if (g.length > 2) {
+                    g[1] = g.slice(1).join(":");
+                  }
+                  v = "";
+                  if (("" + g[1]).indexOf("~") == 0) {
+                    h = g[1].substring(1).split("|");
+                    for (i = 0; i < h.length; i++) h[i] = utag.ut.decode(h[i]);
+                    v = h
+                  } else v = utag.ut.decode(g[1]);
+                  j[g[0]] = v;
+                }catch(er){utag.DB(er)};
+              }
+              o[ck] = {};
+              for (f in utag.loader.GV(j)) {
+                if (utag.ut.typeOf(j[f]) == "array") {
+                  n = [];
+                  for (m = 0; m < j[f].length; m++) {
+                    if (j[f][m].match(s)){
+                      k = (RegExp.$2 == "session") ? (typeof j._st != "undefined" ? j._st : t - 1) : parseInt(RegExp.$2);
+                      if (k > t) n[m] = (x == 0) ? j[f][m] : RegExp.$1;
+                    }
+                  }
+                  j[f] = n.join("|");
+                } else {
+                  j[f] = "" + j[f];
+                  if (j[f].match(s)) {
+                    k = (RegExp.$2 == "session") ? (typeof j._st != "undefined" ? j._st : t - 1) : parseInt(RegExp.$2);
+                    j[f] = (k < t) ? null : (x == 0 ? j[f] : RegExp.$1);
+                  }
+                }
+                if (j[f]) o[ck][f] = j[f];
+              }
+            } else if (utag.cl[ck] || utag.cl['_all_']) {
+              o[ck] = e
+            }
+          }
+        }
+        return (a) ? (o[a] ? o[a] : {}) : o;
+      },
+      SC: function(a, b, c, d, e, f, g, h, i, j, k, x, v) {
+        if (!a) return 0;
+        if (a=="utag_main" && utag.cfg.nocookie) return 0;
+        v = "";
+        var date = new Date();
+        var exp = new Date();
+        exp.setTime(date.getTime()+(365*24*60*60*1000));
+        x = exp.toGMTString();
+        if (c && c == "da") {
+          x = "Thu, 31 Dec 2009 00:00:00 GMT";
+        } else if (a.indexOf("utag_") != 0 && a.indexOf("ulog") != 0) {
+          if (typeof b != "object") {
+            v = b
+          }
+        } else {
+          d = utag.loader.RC(a, 0);
+          for (e in utag.loader.GV(b)) {
+            f = "" + b[e];
+            if (f.match(/^(.*);exp-(\d+)(\w)$/)) {
+              g = date.getTime() + parseInt(RegExp.$2) * ((RegExp.$3 == "h") ? 3600000 : 86400000);
+              if (RegExp.$3 == "u") g = parseInt(RegExp.$2);
+              f = RegExp.$1 + ";exp-" + g;
+            }
+            if (c == "i") {
+              if (d[e] == null) d[e] = f;
+            } else if (c == "d") delete d[e];
+            else if (c == "a") d[e] = (d[e] != null) ? (f - 0) + (d[e] - 0) : f;
+            else if (c == "ap" || c == "au") {
+              if (d[e] == null) d[e] = f;
+              else {
+                if (d[e].indexOf("|") > 0) {
+                  d[e] = d[e].split("|")
+                }
+                g = (utag.ut.typeOf(d[e]) == "array") ? d[e] : [d[e]];
+                g.push(f);
+                if (c == "au") {
+                  h = {};
+                  k = {};
+                  for (i = 0; i < g.length; i++) {
+                    if (g[i].match(/^(.*);exp-(.*)$/)) {
+                      j = RegExp.$1;
+                    }
+                    if (typeof k[j] == "undefined") {
+                      k[j] = 1;
+                      h[g[i]] = 1;
+                    }
+                  }
+                  g = [];
+                  for (i in utag.loader.GV(h)) {
+                    g.push(i);
+                  }
+                }
+                d[e] = g
+              }
+            } else d[e] = f;
+          }
+          h = new Array();
+          for (g in utag.loader.GV(d)) {
+            if (utag.ut.typeOf(d[g]) == "array") {
+              for (c = 0; c < d[g].length; c++) {
+                d[g][c] = encodeURIComponent(d[g][c])
+              }
+              h.push(g + ":~" + d[g].join("|"))
+            } else h.push((g + ":").replace(/[\,\$\;\?]/g,"") + encodeURIComponent(d[g]))
+          }
+          if (h.length == 0) {
+            h.push("");
+            x = ""
+          }
+          v = (h.join("$"));
+        }
+        document.cookie = a + "=" + v + ";path=/;domain=" + utag.cfg.domain + ";expires=" + x + (utag.cfg.secure_cookie?";secure":"");
+        return 1
+      },
+      LOAD: function(a, b, c, d) {
+        //utag.DB('utag.loader.LOAD:' + a);
+        if(!utag.loader.cfg){
+           return
+        }
+	if(this.ol==0){
+          if(utag.loader.cfg[a].block && utag.loader.cfg[a].cbf){
+            this.f[a] = 1;
+	    delete utag.loader.bq[a];
+          }
+	  for(b in utag.loader.GV(utag.loader.bq)){
+            if(utag.loader.cfg[a].load==4 && utag.loader.cfg[a].wait==0){
+              utag.loader.bk[a]=1;
+              utag.DB("blocked: "+ a);
+            }
+	    utag.DB("blocking: " + b);
+	    return;
+	  }
+	  utag.loader.INIT();
+	  return;
+	}
+        utag.DB('utag.loader.LOAD:' + a);
+
+        if (this.f[a] == 0) {
+          this.f[a] = 1;
+      	
+	  if(utag.cfg.noview!=true){
+	    if(utag.loader.cfg[a].send){
+              utag.DB("SENDING: "+a);
+              try{
+                if (utag.loader.sendq.pending > 0 && utag.loader.sendq[a]) {
+                  utag.DB("utag.loader.LOAD:sendq: "+a);
+                  while( d = utag.loader.sendq[a].shift() ) {
+                    utag.DB(d);
+                    utag.sender[a].send(d.event, utag.handler.C(d.data));
+                    utag.loader.sendq.pending--;
+                  }
+                } else {
+                  utag.sender[a].send('view',utag.handler.C(utag.data));
+                }
+		utag.rpt['s_' + a] = 0;
+	      } catch (e) {
+                utag.DB(e);
+	        utag.rpt['s_' + a] = 1;
+	      }
+	    }
+	  }
+	  if(utag.loader.rf==0)return;
+          for (b in utag.loader.GV(this.f)) {
+            if (this.f[b] == 0 || this.f[b] == 2) return
+          }
+	  utag.loader.END();
+        }
+      },
+      EV: function(a, b, c, d) {
+        if (b == "ready") {
+          if(!utag.data){
+            try {
+              utag.cl = {'_all_': 1};
+              utag.loader.initdata();    
+              utag.loader.RD(utag.data);
+            }catch(e){ utag.DB(e) };
+          }
+          if ( (document.attachEvent || utag.cfg.dom_complete) ? document.readyState === "complete" : document.readyState !== "loading" ) setTimeout(c, 1);
+          else {
+            utag.loader.ready_q.push(c);
+            var RH;
+
+            if(utag.loader.ready_q.length<=1){
+              if (document.addEventListener) {
+                RH = function() {
+                  document.removeEventListener("DOMContentLoaded", RH, false);
+                  utag.loader.run_ready_q()
+                };
+                if(!utag.cfg.dom_complete)document.addEventListener("DOMContentLoaded", RH, false);
+                window.addEventListener("load", utag.loader.run_ready_q, false);
+              } else if (document.attachEvent) {
+                RH = function() {
+                  if (document.readyState === "complete") {
+                    document.detachEvent("onreadystatechange", RH);
+                    utag.loader.run_ready_q()
+                  }
+                };
+                document.attachEvent("onreadystatechange", RH);
+                window.attachEvent("onload", utag.loader.run_ready_q);
+              }
+            }
+          }
+        } else {
+          if (a.addEventListener) {
+            a.addEventListener(b, c, false)
+          } else if (a.attachEvent) {
+            a.attachEvent(((d == 1) ? "" : "on") + b, c)
+          }
+        }
+      },
+      END: function(b, c, d, e, v, w){
+        if(this.ended){return};
+        this.ended=1;
+	utag.DB("loader.END");
+        b = utag.data;
+        // add the default values for future utag.link/view calls
+	if(utag.handler.base && utag.handler.base!='*'){
+          e = utag.handler.base.split(",");
+          for (d = 0; d < e.length; d++) {
+            if (typeof b[e[d]] != "undefined") utag.handler.df[e[d]] = b[e[d]]
+          }
+        }else if (utag.handler.base=='*'){
+           utag.ut.merge(utag.handler.df,b,1);
+        }
+
+        utag.rpt['r_0']="t";
+	for(var r in utag.loader.GV(utag.cond)){
+          utag.rpt['r_'+r]=(utag.cond[r])?"t":"f";
+        }
+
+        utag.rpt.ts['s'] = new Date();
+	
+
+        v = utag.cfg.path;
+        // both .tiqcdn.com and .tiqcdn.cn supported
+        w = v.indexOf(".tiqcdn.");
+        if(w>0 && b["cp.utag_main__ss"]==1 && !utag.cfg.no_session_count)utag.ut.loader({src:v.substring(0,v.indexOf("/ut"+"ag/")+6)+"tiqapp/ut"+"ag.v.js?a="+utag.cfg.utid+(utag.cfg.nocookie?"&nocookie=1":"&cb="+(new Date).getTime()),id:"tiqapp"})
+        
+        if(utag.cfg.noview!=true)utag.handler.RE('view',b,"end");
+	utag.handler.INIT();
+      }
+    },
+    DB: function(a, b) {
+      // return right away if we've already checked the cookie
+      if(utag.cfg.utagdb===false){
+        return;
+      }else if(typeof utag.cfg.utagdb=="undefined"){
+        b = document.cookie+'';
+        utag.cfg.utagdb=((b.indexOf('utagdb=true') >= 0)?true:false);
+      }
+      if(utag.cfg.utagdb===true){
+        var t;
+        if(utag.ut.typeOf(a) == "object"){
+          t=utag.handler.C(a)
+        }else{
+          t=a
+        }
+        utag.db_log.push(t);
+        try{if(!utag.cfg.noconsole)console.log(t)}catch(e){}
+      }
+    },
+    RP: function(a, b, c) {
+      if (typeof a != 'undefined' && typeof a.src != 'undefined' && a.src != '') {
+        b = [];
+        for (c in utag.loader.GV(a)) {
+          if (c != 'src') b.push(c + '=' + escape(a[c]))
+        }
+        this.dbi.push((new Image()).src = a.src + '?utv=' + utag.cfg.v + '&utid=' + utag.cfg.utid + '&' + (b.join('&')))
+      }
+    },
+    view: function(a,c,d) {
+      return this.track({event:'view', data:a || {}, cfg:{cb:c,uids:d}})
+    },
+    link: function(a,c,d) {
+      return this.track({event:'link', data:a || {}, cfg:{cb:c,uids:d}})
+    },
+    track: function(a,b,c,d,e) {
+      a = a || {};
+      if (typeof a == "string") {
+        a = { event: a, data: b || {}, cfg:{cb:c,uids:d} } 
+      }
+
+      // track called directly also supports a 3rd option where first param (a) is data layer and second param (b) is cb function
+      for(e in utag.loader.GV(utag.o)){
+        utag.o[e].handler.trigger(a.event || "view", a.data || a, a.cfg || {cb:b,uids:c})
+      }
+      a.cfg = a.cfg || {cb:b};
+      if(typeof a.cfg.cb == "function")a.cfg.cb();
+
+      return true
+    },
+    handler: {
+      base: "",
+      df: {},
+      o: {},
+      send: {},
+      iflag: 0,
+      INIT: function(a, b, c) {
+        utag.DB('utag.handler.INIT');
+        if(utag.initcatch){
+          utag.initcatch=0;
+          return
+        }
+        this.iflag = 1;
+        a = utag.loader.q.length;
+        if (a > 0) {
+          utag.DB("Loader queue");
+          for (b = 0; b < a; b++) {
+            c = utag.loader.q[b];
+            utag.handler.trigger(c.a, c.b, c.c)
+          }
+        }
+        //##UTABSOLUTELAST##
+      },
+      test: function() {
+        return 1
+      },
+      // reset and run load rules
+      LR: function(b){
+        utag.DB("Load Rules");
+        for(var d in utag.loader.GV(utag.cond)){
+          utag.cond[d]=false;
+        }
+        utag.DB(b);
+        utag.loader.loadrules(b);
+        utag.DB(utag.cond);
+        utag.loader.initcfg();
+        // use the OPTOUTMULTI cookie value to override load rules
+        utag.loader.OU();
+	for(var r in utag.loader.GV(utag.cond)){
+          utag.rpt['r_'+r]=(utag.cond[r])?"t":"f";
+        }
+      },
+      // The third param "c" is a string that defines the location i.e. "blr" == before load rules
+      RE:function(a,b,c,d,e,f,g){
+        if(c!="alr" && !this.cfg_extend){
+          return 0; 
+        }
+        utag.DB("RE: "+c);
+        if(c=="alr")utag.DB("All Tags EXTENSIONS");
+        utag.DB(b);
+        if(typeof this.extend != "undefined"){
+          g=0;
+          for (d = 0; d < this.extend.length; d++) {
+            try {
+              /* Extension Attributes */
+              e=0;
+              if(typeof this.cfg_extend!="undefined"){
+                f=this.cfg_extend[d];
+                if(typeof f.count == "undefined")f.count=0;
+                if(f[a]==0 || (f.once==1 && f.count>0) || f[c]==0){
+                  e=1
+                }else{
+                  if(f[c]==1){g=1};
+                  f.count++
+                }
+              }
+              if(e!=1){
+                this.extend[d](a, b);
+                utag.rpt['ex_' + d] = 0
+              }
+            } catch (er) {
+              utag.DB(er);
+              utag.rpt['ex_' + d] = 1;
+	      utag.ut.error({e:er.message,s:utag.cfg.path+'utag.js',l:d,t:'ge'});
+            }
+          }
+          utag.DB(b);
+          return g;
+        }
+      },
+      trigger: function(a, b, c, d, e, f) {
+        utag.DB('trigger:'+a+(c && c.uids?":"+c.uids.join(","):""));
+        b = b || {};
+        utag.DB(b);
+
+        if (!this.iflag) {
+          utag.DB("trigger:called before tags loaded");
+          for (d in utag.loader.f) {
+            if (!(utag.loader.f[d] === 1)) utag.DB('Tag '+d+' did not LOAD')
+          }
+          utag.loader.q.push({
+            a: a,
+            b: utag.handler.C(b),
+            c: c
+          });
+          return;
+        }
+
+        // update all values for AJAX pages
+        utag.ut.merge(b,this.df,0);
+        utag.loader.RD( b, a );
+
+        // clearing noview flag after the RD function call
+        utag.cfg.noview = false;
+
+        function sendTag(a, b, d){
+          try {
+            if(typeof utag.sender[d]!="undefined"){
+              utag.DB("SENDING: "+d);
+              utag.sender[d].send(a, utag.handler.C(b));
+	      utag.rpt['s_' + d] = 0;
+            }else if (utag.loader.cfg[d].load!=2){
+              // utag.link calls can load in new tags
+              utag.loader.sendq[d] = utag.loader.sendq[d] || [];
+              utag.loader.sendq[d].push({"event":a, "data":utag.handler.C(b)});
+              utag.loader.sendq.pending++;
+              utag.loader.AS({id : d, load : 1}); 
+            }
+          }catch (e) {utag.DB(e)}
+        }
+        
+        // utag.track( { event : "view", data: {myvar : "myval" }, cfg: { uids : [1,2,10] } } );
+        if(c && c.uids){
+          this.RE(a,b,"alr");
+          for(f=0;f<c.uids.length;f++){
+            d=c.uids[f];
+            // bypass load rules, but still check the OPTOUTMULTI cookie before firing
+            if (!utag.loader.OU(utag.loader.cfg[d].tid)) {
+              sendTag(a, b, d);
+            }
+          }
+        }else if(utag.cfg.load_rules_ajax){
+          this.RE(a,b,"blr");
+          // process load rules based on current data layer
+          this.LR(b);
+          this.RE(a,b,"alr");
+          
+          for(f = 0; f < utag.loader.cfgsort.length; f++){
+            d = utag.loader.cfgsort[f];
+            if(utag.loader.cfg[d].load && utag.loader.cfg[d].send){
+              sendTag(a, b, d);
+            }
+          }
+        }else{
+          // legacy behavior
+          this.RE(a,b,"alr");
+          for (d in utag.loader.GV(utag.sender)) {
+            sendTag(a, b, d);
+          }
+        }
+        this.RE(a,b,"end");
+      },
+      // "sort-of" copy
+      C: function(a, b, c) {
+        b = {};
+        for (c in utag.loader.GV(a)) {
+          if(utag.ut.typeOf(a[c]) == "array"){
+            b[c] = a[c].slice(0)
+          }else{
+            // objects are still references to the original (not copies)
+            b[c] = a[c]
+          }
+        }
+        return b
+      }
+    },
+    ut:{
+      pad: function(a,b,c,d){
+        a=""+((a-0).toString(16));d='';if(b>a.length){for(c=0;c<(b-a.length);c++){d+='0'}}return ""+d+a
+      },
+      vi: function(t,a,b){
+        if(!utag.v_id){
+          a=this.pad(t,12);b=""+Math.random();a+=this.pad(b.substring(2,b.length),16);try{a+=this.pad((navigator.plugins.length?navigator.plugins.length:0),2);a+=this.pad(navigator.userAgent.length,3);a+=this.pad(document.URL.length,4);a+=this.pad(navigator.appVersion.length,3);a+=this.pad(screen.width+screen.height+parseInt((screen.colorDepth)?screen.colorDepth:screen.pixelDepth),5)}catch(e){utag.DB(e);a+="12345"};utag.v_id=a;
+        }
+        return utag.v_id
+      },
+      hasOwn: function(o, a) {
+        return o != null && Object.prototype.hasOwnProperty.call(o, a)
+      },
+      isEmptyObject: function(o, a) {
+	for (a in o) {
+          if (utag.ut.hasOwn(o,a))return false
+        }
+        return true
+      },
+      isEmpty: function(o) {
+        var t = utag.ut.typeOf(o);
+        if ( t == "number" ){
+          return isNaN(o)
+        }else if ( t == "boolean" ){
+          return false
+        }else if ( t == "string" ){
+          return o.length === 0
+        }else return utag.ut.isEmptyObject(o)
+      },
+      typeOf: function(e) {
+        return ({}).toString.call(e).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+      },
+      flatten: function(o){
+        // stop when arriving at a string, array, boolean, number (float or integer)
+        var a = {}; 
+        function r(c, p) {
+          if (Object(c) !== c || utag.ut.typeOf(c) == "array") {
+            a[p] = c;
+          } else {
+            if(utag.ut.isEmptyObject(c)){
+              //a[p] = {};
+            }else{
+              for (var d in c) {
+                r(c[d], p ? p+"."+d : d);
+              }
+            }
+          }
+        }
+        r(o, "");
+
+        return a;
+      },
+      merge: function(a, b, c, d) {
+        if(c){
+          for(d in utag.loader.GV(b)){
+            a[d] = b[d]
+          }
+        }else{
+          for(d in utag.loader.GV(b)){
+            if(typeof a[d]=="undefined")a[d] = b[d]
+          }
+        }
+      },
+      decode: function(a, b) {
+        b = "";
+        try{b = decodeURIComponent(a)}catch(e){utag.DB(e)};
+        if (b == ""){b = unescape(a)};
+        return b
+      },
+      encode: function(a, b) {
+        b = "";
+        try{b = encodeURIComponent(a)}catch(e){utag.DB(e)};
+        if (b == ""){b = escape(a)};
+        return b
+      },
+      error: function(a, b, c){
+        if(typeof utag_err!="undefined"){
+          utag_err.push(a)
+        }
+      },
+      loader: function(o, a, b, c, l, m) {
+        utag.DB(o);
+        a=document;
+        if (o.type=="iframe") {
+          // if an iframe of same id already exists, remove and add again (to keep DOM clean and avoid impacting browser history)
+          m = a.getElementById( o.id );
+          if ( m && m.tagName == "IFRAME" ) {
+            m.parentNode.removeChild(m);
+          }
+          b = a.createElement("iframe");
+          o.attrs = o.attrs || {};
+          utag.ut.merge( o.attrs, { "height" : "1", "width" : "1", "style" : "display:none" } , 0 );
+        }else if (o.type=="img"){
+          utag.DB("Attach img: "+o.src);
+          b = new Image();
+        }else{
+          b = a.createElement("script");b.language="javascript";b.type="text/javascript";b.async=1;b.charset="utf-8";
+        }
+        if(o.id){b.id=o.id};
+        for( l in utag.loader.GV(o.attrs) ){
+          b.setAttribute( l, o.attrs[l] )
+        }
+        b.setAttribute("src", o.src);
+        if (typeof o.cb=="function") {
+          if(b.addEventListener) {
+            b.addEventListener("load",function(){o.cb()},false);
+          }else {
+            // old IE support
+            b.onreadystatechange=function(){if(this.readyState=='complete'||this.readyState=='loaded'){this.onreadystatechange=null;o.cb()}};
+          }
+        }
+        if(typeof o.error=="function"){
+          utag.loader.EV(b, "error", o.error);
+        }
+        if ( o.type != "img" ) {
+          l = o.loc || "head";
+          c = a.getElementsByTagName(l)[0];
+          if (c) {
+            utag.DB("Attach to "+l+": "+o.src);
+            if (l == "script") {
+              c.parentNode.insertBefore(b, c);
+            } else {
+              c.appendChild(b)
+            }
+          }
+        }
+      }
+    }
+  };
+  utag.o['bofa.chat']=utag;
+  utag.cfg = {
+    template : "ut4.49.",
+    // Enable load rules ajax feature by default
+    load_rules_ajax: true,
+    load_rules_at_wait: false,
+    lowerqp: false,
+    noconsole: false,
+    //noview: ##UTNOVIEW##,
+    session_timeout: 1800000,
+    readywait: 0,
+    noload: 0,
+    domain: utag.loader.lh(),
+    datasource: "##UTDATASOURCE##".replace("##"+"UTDATASOURCE##",""),
+    secure_cookie: ("##UTSECURECOOKIE##".replace("##"+"UTSECURECOOKIE##","")==="true")?true:false,
+    path: "//tags.tiqcdn.com/utag/bofa/chat/prod/",
+    utid: "bofa/chat/202511210110",
+    ignoreSessionStorage: false,
+    ignoreLocalStorage: false
+  };
+  utag.cfg.v = utag.cfg.template + "202511210110";
+  utag.cond={75:0,76:0};
+utag.loader.initdata = function() {   try {       utag.data = (typeof utag_data != 'undefined') ? utag_data : {};       utag.udoname='utag_data';    } catch (e) {       utag.data = {};       utag.DB('idf:'+e);   }};utag.loader.loadrules = function(_pd,_pc) {var d = _pd || utag.data; var c = _pc || utag.cond;for (var l in utag.loader.GV(c)) {switch(l){
+case '75':try{c[75]|=(d['dom.url'].toString().toLowerCase().indexOf('/chat/'.toLowerCase())>-1)||(d['dom.url'].toString().toLowerCase().indexOf('/gt-chat/'.toLowerCase())>-1)}catch(e){utag.DB(e)}; break;
+case '76':try{c[76]|=(d['dom.url'].toString().toLowerCase().indexOf('-dev'.toLowerCase())<0&&d['dom.query_string'].toString().toLowerCase().indexOf('dev1celebrus=true'.toLowerCase())<0&&d['dom.query_string'].toString().toLowerCase().indexOf('disablecelebrus=true'.toLowerCase())<0)}catch(e){utag.DB(e)}; break;}}};utag.pre=function() {    utag.loader.initdata();    try{utag.loader.RD(utag.data)}catch(e){utag.DB(e)};    utag.loader.loadrules();    };utag.loader.GET=function(){utag.cl={'_all_':1};utag.pre();
+  utag.handler.extend=[];
+  utag.handler.cfg_extend=[];
+if (utag.gdpr) {    var consentEnabled = false;    var preferencesEnabled = false;    var doNotSellEnabled = false;    utag.gdpr.doNotSell = utag.gdpr.doNotSell || {};    utag.gdpr.preferences_prompt = utag.gdpr.preferences_prompt || {};    utag.gdpr.consent_prompt = utag.gdpr.consent_prompt || {};    utag.gdpr.applyConsentState = function () {        var enforcementMode = utag.gdpr.getEnforcementMode();        if (enforcementMode === 'none')            return;        utag.DB('Consent Manager: Applying consent');        try {            var i, lc = utag.loader.cfg, cs = utag.gdpr.getConsentState(), ot = utag.gdpr.omittedTags || {};            if (typeof cs === 'number') {                if ((utag.gdpr.consent_prompt.isEnabled && parseInt(cs) !== 1) || ((!consentEnabled && preferencesEnabled && enforcementMode === 'opt-in') && (parseInt(cs) === -1 || parseInt(cs) === 0))) {                    utag.DB('Consent Manager: Setting all tags to off');                    for (i in utag.loader.GV(lc)) {                        if (typeof ot[i] === 'undefined') {                            lc[i].load = 0;                        }                    }                }            } else if (((utag.gdpr.consent_prompt.isEnabled || utag.gdpr.preferences_prompt.isEnabled) || (!consentEnabled && preferencesEnabled)) && enforcementMode === 'opt-in') {                utag.DB('Consent Manager: Partial Consent');                for (i in utag.loader.GV(lc)) {                    if (typeof ot[i] === 'undefined') {                        if (lc[i].tcat > 0 && cs[lc[i].tcat - 1].ct != '1') {                            lc[i].load = 0;                        }                    }                }            }            var btl = utag.gdpr.dns ? utag.gdpr.dns.getBlockedDnsTagLookup() : null;            utag.DB('Consent Manager: Do Not Sell Tags');            if (enforcementMode === 'opt-out' && btl) {                for (i in utag.loader.GV(lc)) {                    if (parseInt(btl[i]) === 1) {                        lc[i].load = 0;                    }                }            }            try {                if (window.tealiumConsentRegister && window.tealiumConsentRegister.currentDecision === null) {                    var cookieValues = utag.gdpr.getCookieValues();                    var hasDnsCookie = typeof cookieValues.dns === 'string';                    var hasConsentCookie = typeof cookieValues.consent === 'string';                    var decisionType = (enforcementMode === 'opt-in' && hasConsentCookie) || (enforcementMode === 'opt-out' && hasDnsCookie) ? 'explicit' : 'implicit';                    var decision = (decisionType === 'implicit' && enforcementMode === 'opt-in') ? [] : utag.gdpr.getSelectedCategories();                    decision.unshift('always_on');                    decision.type = decisionType;                    window.tealiumConsentRegister.addConsentDecision(decision);                }            } catch (e) {                utag.DB(e);            }        } catch (e) {            utag.DB(e);        }    };    utag.gdpr.promptEnabledSetting = function() {        if (!utag.gdpr.dr && (utag.cfg.readywait || utag.cfg.waittimer)) {            utag.gdpr.dr = 1;            return;        }        utag.gdpr.consent_prompt.wasInitiallyEnabled = consentEnabled;        utag.gdpr.preferences_prompt.wasInitiallyEnabled = preferencesEnabled;        utag.gdpr.doNotSell.wasInitiallyEnabled = doNotSellEnabled;        if (consentEnabled === true && !(1)) {            utag.gdpr.consent_prompt.isEnabled = false;        }        if (preferencesEnabled === true && (consentEnabled === true && !(1))) {            utag.gdpr.preferences_prompt.isEnabled = false;        }        if (doNotSellEnabled === true && !(1)) {            utag.gdpr.doNotSell.isEnabled = false;        }        if (preferencesEnabled === true && consentEnabled === false && !(1)) {            utag.gdpr.preferences_prompt.isEnabled = true;        }    };    var splitGdprModules = false;    if (typeof utag.gdpr.getEnforcementMode !== 'function') {        splitGdprModules = true;    }    utag.gdpr.getEnforcementMode = function() {        utag.gdpr.promptEnabledSetting();        var optInModulesAreActive = (utag.gdpr.consent_prompt && utag.gdpr.consent_prompt.isEnabled === true);        var optOutModuleIsActive = (utag.gdpr.doNotSell && utag.gdpr.doNotSell.isEnabled === true);        var optInPreferencesOnly = (!optInModulesAreActive && !utag.gdpr.consent_prompt.wasInitiallyEnabled && utag.gdpr.preferences_prompt.wasInitiallyEnabled && !optOutModuleIsActive) || (splitGdprModules && utag.gdpr.preferences_prompt && utag.gdpr.preferences_prompt.wasInitiallyEnabled);        var enforcementMode = 'opt-in';        if (optOutModuleIsActive && !optInModulesAreActive)            enforcementMode = 'opt-out';        if (!optOutModuleIsActive && optInPreferencesOnly)            enforcementMode = 'opt-in';        if (!optOutModuleIsActive && !optInModulesAreActive && !optInPreferencesOnly)            enforcementMode = 'none';        return enforcementMode;    };}  utag.loader.initcfg = function(){
+    utag.loader.cfg={"70":{load:utag.cond[75],send:1,v:202511210110,wait:1,tid:20010},"80":{load:((utag.cond[76])),send:1,v:202408291007,wait:1,tid:20010}};
+utag.loader.cfgsort=["70","80"];
+if (utag.gdpr && utag.gdpr.getEnforcementMode() === 'opt-in') {  Object.keys(utag.loader.cfg).forEach(function (tagId) {      if (utag.loader.cfg[tagId].tcat === 16) {          utag.DB('Consent Manager: Removing uncategorized tag from utag.loader.cfg in opt-in mode: ' + tagId);          delete utag.loader.cfg[tagId];          utag.loader.cfgsort = utag.loader.cfgsort.filter(function(id) {              return id !== tagId;          });       }  })}  }
+utag.loader.initcfg();
+}
+
+  
+  if(typeof utag_cfg_ovrd!='undefined'){for(utag._i in utag.loader.GV(utag_cfg_ovrd))utag.cfg[utag._i]=utag_cfg_ovrd[utag._i]};
+  utag.loader.PINIT = function(a,b,c){
+    utag.DB("Pre-INIT");
+    if (utag.cfg.noload) {
+      return;
+    }
+
+    try {
+      // Initialize utag.data
+      this.GET();
+      // Even if noview flag is set, we still want to load in tags and have them ready to fire
+      // blr = "before load rules"
+      if(utag.handler.RE('view',utag.data,"blr")){
+        utag.handler.LR(utag.data);
+      }
+      
+    }catch(e){utag.DB(e)};
+    // process 'blocking' tags (tags that need to run first)
+    a=this.cfg;
+    c=0;
+    for (b in this.GV(a)) {
+      // external .js files (currency converter tag) are blocking
+      if(a[b].block == 1 || (a[b].load>0 && (typeof a[b].src!='undefined'&&a[b].src!=''))){
+        a[b].block = 1;
+        c=1;
+        this.bq[b]=1;
+      }
+    }
+    if(c==1) {
+      for (b in this.GV(a)) {
+        if(a[b].block){
+          // handle case of bundled and blocking (change 4 to 1)
+          // (bundled tags that do not have a .src should really never be set to block... they just run first)
+          a[b].id=b; 
+          if(a[b].load==4)a[b].load=1; 
+ 	  a[b].cb=function(){
+            var d=this.uid;
+            utag.loader.cfg[d].cbf=1;
+            utag.loader.LOAD(d)
+          };
+          this.AS(a[b]);
+        }
+      }
+    }
+    if(c==0)this.INIT();
+  };
+  utag.loader.INIT = function(a, b, c, d, e) {
+    utag.DB('utag.loader.INIT');
+    if (this.ol == 1) return -1;
+    else this.ol = 1;
+    // The All Tags scope extensions run after blocking tags complete
+    // The noview flag means to skip these Extensions (will run later for manual utag.view call)
+    if(utag.cfg.noview!=true)utag.handler.RE('view',utag.data,"alr"); 
+
+    utag.rpt.ts['i'] = new Date();
+     
+    d = this.cfgsort;
+    // TODO: Publish engine should sort the bundled tags first..
+    for (a=0;a<d.length;a++){
+      e = d[a];
+      b = this.cfg[e];
+      b.id = e;
+      if(b.block != 1){
+        // do not wait if the utag.cfg.noview flag is set and the tag is bundled
+        if (utag.loader.bk[b.id] || ((utag.cfg.readywait||utag.cfg.noview) && b.load==4)){
+          this.f[b.id]=0;
+          utag.loader.LOAD(b.id)
+        }else if (b.wait == 1 && utag.loader.rf == 0) {
+	  utag.DB('utag.loader.INIT: waiting ' + b.id);
+          this.wq.push(b)
+          this.f[b.id]=2;
+        }else if (b.load>0){
+	  utag.DB('utag.loader.INIT: loading ' + b.id);
+	  this.lq.push(b);
+          this.AS(b);
+        }
+      }
+    }
+          
+    if (this.wq.length > 0) utag.loader.EV('', 'ready', function(a) {
+      if(utag.loader.rf==0){
+        utag.DB('READY:utag.loader.wq');
+        utag.loader.rf=1;
+        utag.loader.WQ();
+      }
+    });
+    else if(this.lq.length>0)utag.loader.rf=1;
+    else if(this.lq.length==0)utag.loader.END();
+
+    return 1
+  };
+  
+
+  if(utag.cfg.readywait || utag.cfg.waittimer){
+    utag.loader.EV('', 'ready', function(a) {
+      if(utag.loader.rf==0){
+        utag.loader.rf=1;
+        utag.cfg.readywait=1;
+        utag.DB('READY:utag.cfg.readywait');
+        setTimeout(function(){utag.loader.PINIT()}, utag.cfg.waittimer || 1);
+      }
+    })
+  }else{
+    utag.loader.PINIT()
+  }
+}
+

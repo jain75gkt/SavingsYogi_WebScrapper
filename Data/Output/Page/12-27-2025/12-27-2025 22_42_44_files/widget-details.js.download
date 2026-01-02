@@ -1,0 +1,1 @@
+(function(define){define("utilities/platform/widget-details",["exports"],function(exports){"use strict";Object.defineProperty(exports,"__esModule",{value:true});exports.default={widgetName:"global-search-public-widget",widgetVersion:"1.0.0"}});})(window.sparta.require["global-search-public-widget"]["1.0.0"].define)

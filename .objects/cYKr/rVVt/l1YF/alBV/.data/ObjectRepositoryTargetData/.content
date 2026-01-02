@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="6vnkq_6FmEqn6cj2xSz-Hw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="td.com/us/en/personal-banking/certificates-of-deposit" CVScreenId="724dd704-886f-435e-8592-67914f55fa56" CvElementArea="773, 649, 392, 55" CvTextArea="872, 666, 191, 22" CvTextArgument="Update my location" CvType="Button" DesignTimeRectangle="775, 651, 388, 52" ElementType="Button" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl aaname='                             Update my location                         ' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' class='cmp-button' matching:class='fuzzy' fuzzylevel:class='0.0' parentid='cmp-region-selector-modal' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' tag='BUTTON' type='button' check:innerText='Update my location' /&gt;" Guid="501a2d9d-553a-4ec7-b07a-2d577099bcbc" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposits: View CD Rates &amp;amp; Term Options | TD Bank' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="None">
+      <imageRef attrName="InformativeScreenshot" originalValue="cb931edad9a592f9e54677252d307aba.png" xmlns="">0gDBVVNAoeUmzOT-Q57mJJA</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">KeyboardShortcut</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

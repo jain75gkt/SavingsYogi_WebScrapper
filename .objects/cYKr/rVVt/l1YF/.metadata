@@ -1,0 +1,13 @@
+﻿{
+  "Name": "Edge Certificate of Deposits View CD Rates & ",
+  "Type": "Screen",
+  "Id": "l1YFLKJAfESS60wjFLOweA",
+  "Reference": "wmoQtc-7M02aRki2x1FIUw/l1YFLKJAfESS60wjFLOweA",
+  "ParentRef": "wmoQtc-7M02aRki2x1FIUw/rVVts5_adkizR12ROLndCA",
+  "Created": "2025-12-26T14:22:26.8073633Z",
+  "Updated": "2025-12-26T14:22:26.8073633Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=25.10.21.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=25.10.1.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

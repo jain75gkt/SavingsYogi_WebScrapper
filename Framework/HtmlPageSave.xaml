@@ -1,5 +1,6 @@
-<Activity mc:Ignorable="sap sap2010" x:Class="HtmlPageSave" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:s="clr-namespace:System;assembly=System.Private.CoreLib" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:sd1="clr-namespace:System.Drawing;assembly=System.Drawing.Common" xmlns:sd2="clr-namespace:System.Drawing;assembly=System.Drawing.Primitives" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Activity mc:Ignorable="sap sap2010" x:Class="HtmlPageSave" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:sco="clr-namespace:System.Collections.ObjectModel;assembly=System.Private.CoreLib" xmlns:sd="clr-namespace:System.Data;assembly=System.Data.Common" xmlns:sd1="clr-namespace:System.Drawing;assembly=System.Drawing.Common" xmlns:sd2="clr-namespace:System.Drawing;assembly=System.Drawing.Primitives" xmlns:ui="http://schemas.uipath.com/workflow/activities" xmlns:uix="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <x:Members>
+    <x:Property Name="In_url" Type="InArgument(x:String)" />
     <x:Property Name="IN_in_Config" Type="InArgument(scg:Dictionary(x:String, x:Object))" />
     <x:Property Name="IN_in_transactionItem" Type="InArgument(sd:DataRow)" />
   </x:Members>
@@ -31,8 +32,6 @@
       <x:String>UiPath.Core</x:String>
       <x:String>UiPath.Core.Activities</x:String>
       <x:String>System.Windows.Markup</x:String>
-      <x:String>GlobalVariablesNamespace</x:String>
-      <x:String>GlobalConstantsNamespace</x:String>
       <x:String>UiPath.UIAutomationNext.Enums</x:String>
       <x:String>UiPath.UIAutomationCore.Contracts</x:String>
       <x:String>UiPath.UIAutomationNext.Activities</x:String>
@@ -51,6 +50,8 @@
       <x:String>System.Linq.Expressions</x:String>
       <x:String>System.Activities.Runtime.Collections</x:String>
       <x:String>System.Xml.Serialization</x:String>
+      <x:String>GlobalVariablesNamespace</x:String>
+      <x:String>GlobalConstantsNamespace</x:String>
     </sco:Collection>
   </TextExpression.NamespacesForImplementation>
   <TextExpression.ReferencesForImplementation>
@@ -112,24 +113,36 @@
       <AssemblyReference>System.Collections.NonGeneric</AssemblyReference>
       <AssemblyReference>System.Linq.Expressions</AssemblyReference>
       <AssemblyReference>System.Private.Xml</AssemblyReference>
+      <AssemblyReference>System.CodeDom</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic.Forms</AssemblyReference>
+      <AssemblyReference>Microsoft.VisualBasic.Core</AssemblyReference>
     </sco:Collection>
   </TextExpression.ReferencesForImplementation>
-  <Sequence DisplayName="HtmlPageSave" sap:VirtualizedContainerService.HintSize="850,2381.6" sap2010:WorkflowViewState.IdRef="Sequence_1">
+  <Sequence DisplayName="HtmlPageSave" sap:VirtualizedContainerService.HintSize="850,2239.2" sap2010:WorkflowViewState.IdRef="Sequence_1">
     <sap:WorkflowViewStateService.ViewState>
       <scg:Dictionary x:TypeArguments="x:String, x:Object">
         <x:Boolean x:Key="IsExpanded">True</x:Boolean>
       </scg:Dictionary>
     </sap:WorkflowViewStateService.ViewState>
     <ui:LogMessage DisplayName="Log Message" sap:VirtualizedContainerService.HintSize="520,174.4" sap2010:WorkflowViewState.IdRef="LogMessage_1" Level="Info" Message="[&quot;Processing for saving html page&quot;]" />
-    <TryCatch DisplayName="Try Catch" sap:VirtualizedContainerService.HintSize="520,2184" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+    <TryCatch DisplayName="Try Catch" sap:VirtualizedContainerService.HintSize="520,2041.6" sap2010:WorkflowViewState.IdRef="TryCatch_1">
+      <TryCatch.Finally>
+        <Sequence DisplayName="Finally" sap:VirtualizedContainerService.HintSize="518.4,94.4" sap2010:WorkflowViewState.IdRef="Sequence_3">
+          <sap:WorkflowViewStateService.ViewState>
+            <scg:Dictionary x:TypeArguments="x:String, x:Object">
+              <x:Boolean x:Key="IsExpanded">True</x:Boolean>
+            </scg:Dictionary>
+          </sap:WorkflowViewStateService.ViewState>
+        </Sequence>
+      </TryCatch.Finally>
       <TryCatch.Try>
-        <uix:NApplicationCard AttachMode="ByInstance" CloseMode="[UiPath.UIAutomationNext.Enums.NAppCloseMode.Always]" DisplayName="Edge Certificate of Deposit  High Yield CD Ra" HealingAgentBehavior="[UiPath.UIAutomationNext.Enums.NHealingAgentBehavior.RecommendationOnly]" sap:VirtualizedContainerService.HintSize="518.4,1664.8" sap2010:WorkflowViewState.IdRef="NApplicationCard_2" IsIncognito="True" ScopeGuid="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Version="V2" WindowResize="Maximize">
+        <uix:NApplicationCard AttachMode="ByInstance" CloseMode="[UiPath.UIAutomationNext.Enums.NAppCloseMode.Always]" DisplayName="Edge Certificate of Deposit  High Yield CD Ra" HealingAgentBehavior="[UiPath.UIAutomationNext.Enums.NHealingAgentBehavior.RecommendationOnly]" sap:VirtualizedContainerService.HintSize="518.4,1795.2" sap2010:WorkflowViewState.IdRef="NApplicationCard_2" IsIncognito="True" ScopeGuid="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Version="V2" WindowResize="Maximize">
           <uix:NApplicationCard.Body>
             <ActivityAction x:TypeArguments="x:Object">
               <ActivityAction.Argument>
                 <DelegateInArgument x:TypeArguments="x:Object" Name="WSSessionData" />
               </ActivityAction.Argument>
-              <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="516.8,1494.4" sap2010:WorkflowViewState.IdRef="Sequence_6">
+              <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="516.8,1624.8" sap2010:WorkflowViewState.IdRef="Sequence_6">
                 <sap:WorkflowViewStateService.ViewState>
                   <scg:Dictionary x:TypeArguments="x:String, x:Object">
                     <x:Boolean x:Key="IsExpanded">True</x:Boolean>
@@ -141,7 +154,7 @@
                       <uix:VerifyExecutionOptions.Target>
                         <uix:TargetAnchorable BrowserURL="chase.com/personal/savings/bank-cd" CVScreenId="d719c0da-9cb5-4c11-8791-db4195216506" ContentHash="I5Y9tlHL1kCrh4id-k_-Yg" CvElementArea="693, 535, 111, 33" CvTextArea="733, 545, 32, 13" CvTextArgument="Save" CvType="Button" DesignTimeRectangle="695, 537, 110, 33" ElementType="Button" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;wnd ctrlid='1' title='&amp;amp;Save' /&gt;" Guid="049d248e-db76-4439-a4d5-8985b195bcc4" InformativeScreenshot="a664071b7670770b01f5a68e2c70edb3.png" Reference="wmoQtc-7M02aRki2x1FIUw/YsllUf_RFkKGO3j3veMluQ" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='#32770' title='Save As' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="Interactive">
                           <uix:TargetAnchorable.Anchors>
-                            <scg:List x:TypeArguments="uix:ITarget" Capacity="4">
+                            <scg:List x:TypeArguments="uix:ITarget" Capacity="1">
                               <uix:Target CVScreenId="d719c0da-9cb5-4c11-8791-db4195216506" CvElementArea="818, 535, 111, 34" CvTextArea="851, 545, 45, 15" CvTextArgument="Cancel" CvType="Button" DesignTimeRectangle="820, 537, 110, 33" ElementType="Button" FuzzySelectorArgument="&lt;wnd ctrlid='2' title='Cancel' matching:ctrlid='fuzzy' fuzzylevel:ctrlid='0.0' matching:title='fuzzy' fuzzylevel:title='0.0' check:text='Cancel' /&gt;" Guid="3e27dd32-5ea7-4efa-9098-9bedfcc07ebc" SearchSteps="FuzzySelector, CV" />
                             </scg:List>
                           </uix:TargetAnchorable.Anchors>
@@ -153,7 +166,8 @@
                     </uix:VerifyExecutionOptions>
                   </uix:NKeyboardShortcuts.VerifyOptions>
                 </uix:NKeyboardShortcuts>
-                <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" ClipboardMode="Never" DisplayName="Type Into 'File name'" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="483.2,249.6" sap2010:WorkflowViewState.IdRef="NTypeInto_5" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Text="[IN_in_Config(&quot;HTMLpath&quot;).ToString+&quot;\&quot;+Now.ToString.Replace(&quot;:&quot;,&quot;_&quot;).Replace(&quot;/&quot;,&quot;-&quot;).Replace(&quot;\&quot;,&quot;-&quot;)]" Version="V5">
+                <ui:CreateDirectory ContinueOnError="{x:Null}" Output="{x:Null}" DisplayName="Create Folder" sap:VirtualizedContainerService.HintSize="483.2,126.4" sap2010:WorkflowViewState.IdRef="CreateDirectory_2" Path="[IN_in_Config(&quot;HTMLpath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)]" />
+                <uix:NTypeInto ActivateBefore="True" ClickBeforeMode="Single" ClipboardMode="Never" DisplayName="Type Into 'File name'" EmptyFieldMode="SingleLine" HealingAgentBehavior="SameAsCard" sap:VirtualizedContainerService.HintSize="483.2,249.6" sap2010:WorkflowViewState.IdRef="NTypeInto_5" InteractionMode="HardwareEvents" ScopeIdentifier="59a2e250-e540-4aa1-b905-8ed3fc004f6f" Text="[IN_in_Config(&quot;HTMLpath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)+&quot;\&quot;+Now.ToString.Replace(&quot;:&quot;,&quot;_&quot;).Replace(&quot;/&quot;,&quot;-&quot;).Replace(&quot;\&quot;,&quot;-&quot;)]" Version="V5">
                   <uix:NTypeInto.Target>
                     <uix:TargetAnchorable BrowserURL="discover.com/online-banking/cd" CVScreenId="074a93e0-3e15-4519-830e-2cdc3e5bb44c" CvElementArea="162, 400, 781, 29" CvType="InputBox" DesignTimeRectangle="169, 405, 752, 22" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;wnd aaname='Explorer Pane' cls='DirectUIHWND' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;&lt;wnd aaname='File name:' cls='ComboBox' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;&lt;wnd ctrlid='1001' matching:ctrlid='fuzzy' fuzzylevel:ctrlid='0.0' /&gt;" Guid="33d78636-eb97-4a4f-b60e-bd18debe174c" InformativeScreenshot="070f786c2a27f4dfdffd8ffe72017ca0.png" IsResponsive="True" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='#32770' title='Save As' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="Interactive">
                       <uix:TargetAnchorable.Anchors>
@@ -164,7 +178,7 @@
                     </uix:TargetAnchorable>
                   </uix:NTypeInto.Target>
                 </uix:NTypeInto>
-                <ui:GetLastDownloadedFile File="{x:Null}" FileResource="{x:Null}" Timeout="{x:Null}" DisplayName="Wait for Download" DownloadFolder="[IN_in_Config(&quot;HTMLpath&quot;).ToString]" sap:VirtualizedContainerService.HintSize="483.2,535.2" sap2010:WorkflowViewState.IdRef="GetLastDownloadedFile_3" IgnoreFiles="tmp,dwn">
+                <ui:GetLastDownloadedFile File="{x:Null}" FileResource="{x:Null}" DisplayName="Wait for Download" DownloadFolder="[IN_in_Config(&quot;HTMLpath&quot;).ToString+&quot;\&quot;+Now.ToShortDateString.Replace(&quot;/&quot;,&quot;-&quot;)]" sap:VirtualizedContainerService.HintSize="483.2,539.2" sap2010:WorkflowViewState.IdRef="GetLastDownloadedFile_3" IgnoreFiles="tmp,dwn" Timeout="100">
                   <ui:GetLastDownloadedFile.Body>
                     <ActivityAction>
                       <Sequence DisplayName="Do" sap:VirtualizedContainerService.HintSize="449.6,244.8" sap2010:WorkflowViewState.IdRef="Sequence_8">
@@ -203,7 +217,7 @@
             </ActivityFunc>
           </uix:NApplicationCard.OCREngine>
           <uix:NApplicationCard.TargetApp>
-            <uix:TargetApp Area="-9, -9, 1938, 1038" BrowserType="Edge" IconBase64="iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAALeSURBVDhPndNJSFRxHAfw6SDBe+OSy7xt3syL6BCo01hpQhuRRYeQEnJJ00qtzCUrM7NFU1PU0jLTXCeipENIh4iKiASJUgiJ8lK26aizNPvyDvGNeT5F69bhC+/wPr8Ffn8FgGWLUxdNrGmKJqrbYolX3TriY5+O/NCnJ5/1xJHlfRuU/N//K+Y/aqOJoMYYor5bR3oG40i83qjE6NYQjO0Iw1hSGEa3h+LlpmDrg/XKkn8K1EUTQc0xxKOBtSSGEpUY37UC3/ZG4ud+FabSVDCmqzCdQWE6XYXP+yIwnBRas6RAUwxR/1BP4t3mYEwkR2AyVYXJNBWm0gOhMJVBwZhJYSabgjmXhimXwo+cqFSpQEMskXhPT/4e2RKC7ymRMpqDxkDXTArT2RRmD1Mw5dMwF9CwFjOwnWbM9nJGq7ihI9ufJyjxNTlCAlI3Gc4cpDB7iIIpj4b5OA1LEYNfJxnYyhjYKhg4LrGlii49OTyyLRTGwK4HZJglw1wK5mM0LIUyPMPAdo6B4wILZzUHZ536vuLuOuX78d0rJDSdRWMmh4LpCAXzURqWEwysJdK4sJUzsFeycFRxcNZycDWo4W7mnyq648PfTCSHw3SIhukwDXM+DUsBA2tg3FIGtrMM7OdZOC5zcNZwcNWr4W7i4Wnh4b3JDyj640M6JlIiYAl0DOy5aFx7BQvHRRbOKxxcV9VwN/LwXJcgfO0a+Du1ZYreBHLrp5Rw2IpYeVwW9nJ2YU9X3SJ4QwPfLQnC3y2I/h5htXQHQ3tCnzhOMXOwkoWzioOrloO7gYfnGg9vqww7tPB3CRB7BYj9QtvCIQ3uDOGNxfQXdwDWcHDXq+Fp5uFt0cDXpoHvtgb+Lu08hGgQ3ooGIXjJW5goZFd5G/hhT6MMb8rwjhZizwIM5LFoEKKWnPJ8fE38cm+rJs/Xrhn2d2qtYo9gFftXWkWDYBYNwgvRIEjnuzhLCvxP/gC342hQD3gNBAAAAABJRU5ErkJggg==" InformativeScreenshot="72b71e5ff34ba48a7619a1067c7e611d.jpg" Selector="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" Url="[IN_in_TransactionItem(&quot;CD page&quot;).ToString]" Version="V2">
+            <uix:TargetApp Area="-9, -9, 1938, 1038" BrowserType="Edge" IconBase64="iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAAEnQAABJ0Ad5mH3gAAALeSURBVDhPndNJSFRxHAfw6SDBe+OSy7xt3syL6BCo01hpQhuRRYeQEnJJ00qtzCUrM7NFU1PU0jLTXCeipENIh4iKiASJUgiJ8lK26aizNPvyDvGNeT5F69bhC+/wPr8Ffn8FgGWLUxdNrGmKJqrbYolX3TriY5+O/NCnJ5/1xJHlfRuU/N//K+Y/aqOJoMYYor5bR3oG40i83qjE6NYQjO0Iw1hSGEa3h+LlpmDrg/XKkn8K1EUTQc0xxKOBtSSGEpUY37UC3/ZG4ud+FabSVDCmqzCdQWE6XYXP+yIwnBRas6RAUwxR/1BP4t3mYEwkR2AyVYXJNBWm0gOhMJVBwZhJYSabgjmXhimXwo+cqFSpQEMskXhPT/4e2RKC7ymRMpqDxkDXTArT2RRmD1Mw5dMwF9CwFjOwnWbM9nJGq7ihI9ufJyjxNTlCAlI3Gc4cpDB7iIIpj4b5OA1LEYNfJxnYyhjYKhg4LrGlii49OTyyLRTGwK4HZJglw1wK5mM0LIUyPMPAdo6B4wILZzUHZ536vuLuOuX78d0rJDSdRWMmh4LpCAXzURqWEwysJdK4sJUzsFeycFRxcNZycDWo4W7mnyq648PfTCSHw3SIhukwDXM+DUsBA2tg3FIGtrMM7OdZOC5zcNZwcNWr4W7i4Wnh4b3JDyj640M6JlIiYAl0DOy5aFx7BQvHRRbOKxxcV9VwN/LwXJcgfO0a+Du1ZYreBHLrp5Rw2IpYeVwW9nJ2YU9X3SJ4QwPfLQnC3y2I/h5htXQHQ3tCnzhOMXOwkoWzioOrloO7gYfnGg9vqww7tPB3CRB7BYj9QtvCIQ3uDOGNxfQXdwDWcHDXq+Fp5uFt0cDXpoHvtgb+Lu08hGgQ3ooGIXjJW5goZFd5G/hhT6MMb8rwjhZizwIM5LFoEKKWnPJ8fE38cm+rJs/Xrhn2d2qtYo9gFftXWkWDYBYNwgvRIEjnuzhLCvxP/gC342hQD3gNBAAAAABJRU5ErkJggg==" InformativeScreenshot="72b71e5ff34ba48a7619a1067c7e611d.jpg" Selector="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" Url="[In_url]" Version="V2">
               <uix:TargetApp.Arguments>
                 <InArgument x:TypeArguments="x:String" />
               </uix:TargetApp.Arguments>
@@ -220,32 +234,6 @@
           </sap:WorkflowViewStateService.ViewState>
         </uix:NApplicationCard>
       </TryCatch.Try>
-      <TryCatch.Catches>
-        <Catch x:TypeArguments="s:Exception" sap2010:WorkflowViewState.IdRef="Catch`1_1">
-          <ActivityAction x:TypeArguments="s:Exception">
-            <ActivityAction.Argument>
-              <DelegateInArgument x:TypeArguments="s:Exception" Name="exception" />
-            </ActivityAction.Argument>
-            <Sequence DisplayName="Body" sap:VirtualizedContainerService.HintSize="518.4,233.6" sap2010:WorkflowViewState.IdRef="Sequence_4">
-              <sap:WorkflowViewStateService.ViewState>
-                <scg:Dictionary x:TypeArguments="x:String, x:Object">
-                  <x:Boolean x:Key="IsExpanded">True</x:Boolean>
-                </scg:Dictionary>
-              </sap:WorkflowViewStateService.ViewState>
-              <ui:LogMessage DisplayName="Log Message" sap:VirtualizedContainerService.HintSize="484.8,169.6" sap2010:WorkflowViewState.IdRef="LogMessage_3" Level="Error" Message="[&quot;html page not saved due to :&quot;+exception.Message]" />
-            </Sequence>
-          </ActivityAction>
-        </Catch>
-      </TryCatch.Catches>
-      <TryCatch.Finally>
-        <Sequence DisplayName="Finally" sap:VirtualizedContainerService.HintSize="518.4,94.4" sap2010:WorkflowViewState.IdRef="Sequence_3">
-          <sap:WorkflowViewStateService.ViewState>
-            <scg:Dictionary x:TypeArguments="x:String, x:Object">
-              <x:Boolean x:Key="IsExpanded">True</x:Boolean>
-            </scg:Dictionary>
-          </sap:WorkflowViewStateService.ViewState>
-        </Sequence>
-      </TryCatch.Finally>
     </TryCatch>
   </Sequence>
 </Activity>

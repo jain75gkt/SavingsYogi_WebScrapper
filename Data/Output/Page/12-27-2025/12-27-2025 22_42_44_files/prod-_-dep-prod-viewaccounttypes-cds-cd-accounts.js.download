@@ -1,0 +1,64 @@
+utag.globals.dle.enrichments['prod-_-dep-prod-viewaccounttypes-cds-cd-accounts'] = {
+    "attributes": {
+        "updated": "2023-12-01-173427",
+        "page-id": "Dep:Prod:ViewAccountTypes:CDs;cd-accounts"
+    },
+    "pageSettings": {
+        "pixelTag": []
+    },
+    "customEventSettings": [
+        {
+            "el": "#learn-more-featured-cd",
+            "dart": ";src=1359940;type=cd;cat=2023_0;ord=1"
+        },
+        {
+            "el": "#compare-featuredCDOpenNow",
+            "dart": ";src=1359940;type=cd;cat=2023_00;ord=1"
+        },
+        {
+            "el": "#featured-termsAndRates",
+            "dart": ";src=1359940;type=cd;cat=2023_004;ord=1"
+        },
+        {
+            "el": "#learn-more-standard-cd",
+            "dart": ";src=1359940;type=cd;cat=2023_000;ord=1"
+        },
+        {
+            "el": "#compare-standardCDOpenNow",
+            "dart": ";src=1359940;type=cd;cat=2023_001;ord=1"
+        },
+        {
+            "el": "#standard-termsAndRates",
+            "dart": ";src=1359940;type=cd;cat=2023_005;ord=1"
+        },
+        {
+            "el": "#learn-more-flexible-cd",
+            "dart": ";src=1359940;type=cd;cat=2023_002;ord=1"
+        },
+        {
+            "el": "#compare-riskFreeCDOpenNow",
+            "dart": ";src=1359940;type=cd;cat=2023_003;ord=1"
+        },
+        {
+            "el": "#scheduleAppointmentMediumUp",
+            "dart": ";src=1359940;type=cd;cat=cd_conta;ord=1"
+        },
+        {
+            "el": "#scheduleAppointment",
+            "dart": ";src=1359940;type=cd;cat=cd_conta;ord=1"
+        },
+        {
+            "el": "#callus",
+            "custom": [
+                {
+                    "to": [
+                        "cm"
+                    ],
+                    "label": "0",
+                    "category": "0"
+                }
+            ],
+            "dart": ";src=1359940;type=cd;cat=cd_conta;ord=1"
+        }
+    ]
+}

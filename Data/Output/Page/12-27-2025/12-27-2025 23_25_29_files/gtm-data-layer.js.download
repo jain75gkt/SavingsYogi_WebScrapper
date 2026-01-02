@@ -1,0 +1,1220 @@
+var gtm = {
+  content: {
+    createJson: function (
+      articleId,
+      articleName,
+      articlePublishDate,
+      moduleId,
+      moduleName,
+      contentSection,
+      contentLabel,
+      contentName,
+      contentId,
+      contentUrl,
+      contentText,
+      videoId,
+      videoName,
+      videoDuration,
+      videoState,
+      videoPlayer,
+      navAction,
+      pushToDataLayer,
+    ) {
+      const contentJsonString =
+        '{ "content" : { "navAction" : "' +
+        gtm.utilities.getStringValue(navAction) +
+        '", "articleId" : "' +
+        gtm.utilities.getStringValue(articleId) +
+        '", "articleName" : "' +
+        gtm.utilities.getStringValue(articleName) +
+        '", ' +
+        '"articlePublishDate" : "' +
+        articlePublishDate +
+        '", "moduleId" : "' +
+        gtm.utilities.getStringValue(moduleId) +
+        '", ' +
+        '"moduleName" : "' +
+        gtm.utilities.getStringValue(moduleName) +
+        '", "contentSection" : "' +
+        gtm.utilities.getStringValue(contentSection) +
+        '", ' +
+        '"contentLabel" : "' +
+        gtm.utilities.getStringValue(contentLabel) +
+        '", "contentName" : "' +
+        gtm.utilities.getStringValue(contentName) +
+        '", "contentId" : "' +
+        gtm.utilities.getStringValue(contentId) +
+        '", "contentURL" : "' +
+        gtm.utilities.getStringValue(contentUrl) +
+        '", "contentText" : "' +
+        gtm.utilities.getStringValue(contentText) +
+        '", "videoId" : "' +
+        gtm.utilities.getStringValue(videoId) +
+        '", "videoName" : "' +
+        gtm.utilities.getStringValue(videoName) +
+        '", "videoDuration" : "' +
+        gtm.utilities.getStringValue(videoDuration) +
+        '", "videoState" : "' +
+        gtm.utilities.getStringValue(videoState) +
+        '", "videoPlayer" : "' +
+        gtm.utilities.getStringValue(videoPlayer) +
+        '" } }';
+      try {
+        const contentJsonObject = JSON.parse(contentJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(contentJsonObject);
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    blogEntryJson: function (
+      url,
+      articleId,
+      articleName,
+      articlePublishDate,
+      pushToDataLayer,
+    ) {
+      try {
+        gtm.content.createJson(
+          articleId,
+          articleName,
+          articlePublishDate,
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          url,
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "pageload",
+          pushToDataLayer,
+        );
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    chatButtonJson: function (
+      jsonString,
+      moduleId,
+      moduleName,
+      text,
+      element,
+      event,
+      actionOverride,
+      pushToDataLayer,
+    ) {
+      if (gtm.utilities.isLeftMouseButtonOrEnterOrReturnKey(event)) {
+        try {
+          const id = gtm.utilities.getStringValue(element.id, "");
+          const contentId = id.length > 0 ? id : jsonString.navId;
+          const navAction = gtm.utilities.getNavigationAction(
+            jsonString,
+            actionOverride,
+          );
+          const contentText = gtm.utilities.getStringValue(text, "");
+          gtm.content.createJson(
+            "",
+            "",
+            "",
+            moduleId,
+            moduleName,
+            "Customer Care",
+            "",
+            "Online Chat",
+            contentId,
+            "ciscoBubbleChat",
+            contentText,
+            "",
+            "",
+            "",
+            "",
+            "",
+            navAction,
+            pushToDataLayer,
+          );
+        } catch (errorMsg) {
+          gtm.error.json(errorMsg);
+        }
+      }
+    },
+    chatButtonKeyDownJson: function (
+      jsonString,
+      moduleId,
+      moduleName,
+      text,
+      element,
+      event,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isEnterOrReturnKey(event)) {
+          event.preventDefault();
+          gtm.content.chatButtonJson(
+            jsonString,
+            moduleId,
+            moduleName,
+            text,
+            element,
+            event,
+            "keydown",
+            pushToDataLayer,
+          );
+          element.click();
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+  },
+  customer: {
+    json: function (
+      customerId,
+      userName,
+      status,
+      type,
+      email,
+      city,
+      state,
+      zip,
+      country,
+      userState,
+      employment,
+      idType,
+      ageRange,
+      occupation,
+      employerState,
+      pushToDataLayer,
+    ) {
+      const customerJsonString =
+        '"customer" : { "customerId" : "' +
+        customerId +
+        '", "username" : "' +
+        userName +
+        '", "status" : "' +
+        status +
+        '", ' +
+        '"type" : "' +
+        type +
+        '", "email" : "' +
+        email +
+        '", "city" : "' +
+        city +
+        '", "state" : "' +
+        state +
+        '", "zip" : "' +
+        zip +
+        '", ' +
+        '"country" : "' +
+        country +
+        '", "userState" : "' +
+        userState +
+        '", "employment" : "' +
+        employment +
+        '", "idType" : "' +
+        idType +
+        '", ' +
+        '"ageRange" : "' +
+        ageRange +
+        '", "occupation" : "' +
+        occupation +
+        '", "employerState" : "' +
+        employerState +
+        '" } }';
+      try {
+        const customerJsonObject = JSON.parse(customerJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(customerJsonObject);
+        }
+        return customerJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  error: {
+    json: function (errorMsg) {
+      console.log(errorMsg);
+    },
+  },
+  events: {
+    json: function (errorId, errorType, errorText, pushToDataLayer) {
+      const eventsJsonString =
+        '{ "events" : { "errorId" : "' +
+        errorId +
+        '", "errorType" : "' +
+        errorType +
+        '", "errorText" : "' +
+        errorText +
+        '" } }';
+      try {
+        const jsonObject = JSON.parse(eventsJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(jsonObject);
+        }
+        return jsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  forms: {
+    json: function (
+      formName,
+      formId,
+      step,
+      error,
+      submit,
+      complete,
+      pushToDataLayer,
+    ) {
+      const formsJsonString =
+        '{ "forms" : { "formName" : "' +
+        formName +
+        '", "formId" : "' +
+        formId +
+        '", "step" : "' +
+        step +
+        '", ' +
+        '"error" : "' +
+        error +
+        '", "submit" : "' +
+        submit +
+        '", "complete" : "' +
+        complete +
+        '" } }';
+      try {
+        const formsJsonObject = JSON.parse(formsJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(formsJsonObject);
+        }
+        return formsJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  locations: {
+    json: function (
+      locationQuery,
+      locationFilter,
+      locationFilterAtm,
+      locationFilterOpenNow,
+      locationFilterOpenSaturday,
+      locationFilterDriveUp,
+      locationResults,
+      locationId,
+      locationName,
+      locationAddress,
+      locationCity,
+      locationState,
+      locationZip,
+      locationPhone,
+      locationFilterLobbyOpen,
+      locationFilterByAppointment,
+      pushToDataLayer,
+    ) {
+      const locationJsonString =
+        '{ "location" : { "locationQuery" : "' +
+        locationQuery +
+        '", "locationFilter" : { ' +
+        '"locationFilter" : "' +
+        locationFilter +
+        '", "atm" : "' +
+        locationFilterAtm +
+        '", "openNow" : "' +
+        locationFilterOpenNow +
+        '", ' +
+        '"openSaturday" : "' +
+        locationFilterOpenSaturday +
+        '", "driveUp" : "' +
+        locationFilterDriveUp +
+        '", ' +
+        '"lobbyOpen" : "' +
+        locationFilterLobbyOpen +
+        '", "byAppointment" : "' +
+        locationFilterByAppointment +
+        '" }, ' +
+        '"locationResults" : "' +
+        locationResults +
+        '", ' +
+        '"locationId" : "' +
+        locationId +
+        '", "locationName" : "' +
+        locationName +
+        '", "locationAddress" : "' +
+        locationAddress +
+        '", ' +
+        '"locationCity" : "' +
+        locationCity +
+        '", "locationState" : "' +
+        locationState +
+        '", "locationZip" : "' +
+        locationZip +
+        '", ' +
+        '"locationPhone" : "' +
+        locationPhone +
+        '" } }';
+      try {
+        const locationJsonObject = JSON.parse(locationJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(locationJsonObject);
+        }
+        return locationJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  page: {
+    createJson: function (
+      name,
+      url,
+      hostname,
+      path,
+      category,
+      subcategory,
+      section,
+      type,
+      pushToDataLayer,
+    ) {
+      const pageJsonString =
+        '{ "page" : { "name" : "' +
+        name +
+        '", "url" : "' +
+        url +
+        '", "hostname" : "' +
+        hostname +
+        '", ' +
+        '"path" : "' +
+        path +
+        '", "category" : "' +
+        category +
+        '", "subcategory" : "' +
+        subcategory +
+        '", ' +
+        '"section" : "' +
+        section +
+        '", "type" : "' +
+        type +
+        '" } }';
+      try {
+        const pageJsonObject = JSON.parse(pageJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(pageJsonObject);
+        }
+        return pageJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+    json: function (jsonStringParam, pushToDataLayer) {
+      try {
+        const jsonString = jsonStringParam.replace(/&quot;/g, '"');
+        const jsonObject = JSON.parse(jsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        return gtm.page.createJson(
+          jsonObject.name,
+          jsonObject.url,
+          jsonObject.hostName,
+          jsonObject.path,
+          jsonObject.category,
+          jsonObject.subcategory,
+          jsonObject.section,
+          jsonObject.pageType,
+          push,
+        );
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  products: {
+    json: function (
+      productId,
+      productName,
+      productCategory,
+      productSubcategory,
+      pushToDataLayer,
+    ) {
+      const productsJsonString =
+        '{ "products" : { "productId" : "' +
+        productId +
+        '", "productName" : "' +
+        productName +
+        '", ' +
+        '"productCategory" : "' +
+        productCategory +
+        '", "productSubcategory" : "' +
+        productSubcategory +
+        '" } }';
+      try {
+        const productsJsonObject = JSON.parse(productsJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(productsJsonObject);
+        }
+        return productsJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  navigation: {
+    createJson: function (
+      navElement,
+      navLink,
+      navAction,
+      navExternal,
+      navSocial,
+      navCall,
+      navDirections,
+      navReferrer,
+      navId,
+      navType,
+      pushToDataLayer,
+    ) {
+      const navigationJsonString =
+        '{ "navigation" : { "navElement" : "' +
+        navElement +
+        '", "navLink" : "' +
+        navLink +
+        '", ' +
+        '"navAction" : "' +
+        navAction +
+        '", "navExternal" : "' +
+        navExternal +
+        '", "navSocial" : "' +
+        navSocial +
+        '", ' +
+        '"navCall" : "' +
+        navCall +
+        '", "navDirections" : "' +
+        navDirections +
+        '", "navReferrer" : "' +
+        navReferrer +
+        '", ' +
+        '"navID" : "' +
+        navId +
+        '", "navType" : "' +
+        navType +
+        '" } }';
+      try {
+        const navigationJsonObject = JSON.parse(navigationJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(navigationJsonObject);
+        }
+        return navigationJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+    buttonBlockJson: function (
+      jsonString,
+      href,
+      text,
+      element,
+      event,
+      actionOverride,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isLeftMouseButtonOrEnterOrReturnKey(event)) {
+          const navElement = gtm.utilities.sanitize(text).trim();
+          const navAction = gtm.utilities.getNavigationAction(
+            jsonString,
+            actionOverride,
+          );
+          const navLink = gtm.utilities.getFullUrl(href, jsonString);
+          const navExternal = gtm.utilities.isExternal(
+            navLink,
+            gtm.utilities.getBaseUrl(jsonString),
+          );
+          gtm.navigation.createJson(
+            navElement,
+            navLink,
+            navAction,
+            navExternal,
+            jsonString.navSocial,
+            jsonString.navCall,
+            jsonString.navDirections,
+            jsonString.navReferrer,
+            element.id,
+            "button",
+            pushToDataLayer,
+          );
+        }
+      } catch (error) {
+        gtm.error.json(error);
+      }
+    },
+    buttonBlockKeyDownJson: function (
+      jsonString,
+      href,
+      text,
+      element,
+      event,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isEnterOrReturnKey(event)) {
+          event.preventDefault();
+          gtm.navigation.buttonBlockJson(
+            jsonString,
+            href,
+            text,
+            element,
+            event,
+            "keydown",
+            pushToDataLayer,
+          );
+          element.click();
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    formSubmitJson: function (
+      navElement,
+      navLink,
+      navReferrer,
+      navId,
+      pushToDataLayer,
+    ) {
+      try {
+        const navExternal = gtm.utilities.isExternal(navLink, navReferrer);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        return gtm.navigation.createJson(
+          navElement,
+          navLink,
+          "click",
+          navExternal,
+          "",
+          "",
+          "",
+          navReferrer,
+          navId,
+          "form-submit",
+          push,
+        );
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+    linkJson: function (
+      jsonString,
+      href,
+      text,
+      element,
+      event,
+      navSocialOwnerParam,
+      actionOverrideParam,
+      navTypeOverrideParam,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isLeftMouseButtonOrEnterOrReturnKey(event)) {
+          const navElement = gtm.utilities.sanitize(text).trim();
+          let navId = gtm.utilities.sanitize(element.id).trim();
+          if (navId.length < 1) {
+            navId = gtm.utilities.sanitize(jsonString.navId).trim();
+          }
+          const navLink = gtm.utilities.getFullUrl(href, jsonString);
+          const navExternal = gtm.utilities.isExternal(
+            navLink,
+            gtm.utilities.getBaseUrl(jsonString),
+          );
+          let navSocial = gtm.utilities.getStringValue(
+            jsonString.navSocial,
+            "",
+          );
+          if (
+            navSocial === null ||
+            typeof navSocial === "undefined" ||
+            navSocial.toString().length < 1
+          ) {
+            const navSocialOwner = gtm.utilities.getStringValue(
+              navSocialOwnerParam,
+              "umpqua",
+            );
+            switch (navElement.toLowerCase()) {
+              case "facebook":
+              case "instagram":
+              case "linkedin":
+              case "pinterest":
+              case "twitter":
+              case "youtube":
+                navSocial =
+                  navSocialOwner.toLowerCase() + "-" + navElement.toLowerCase();
+                break;
+              default:
+                navSocial = "";
+                break;
+            }
+          }
+          const actionOverride = gtm.utilities.getStringValue(
+            actionOverrideParam,
+            "",
+          );
+          const navAction =
+            actionOverride !== null &&
+            typeof actionOverride !== "undefined" &&
+            actionOverride.length > 0
+              ? actionOverride
+              : jsonString.navAction;
+          const navTypeOverride = gtm.utilities.getStringValue(
+            navTypeOverrideParam,
+            "",
+          );
+          const navType =
+            navTypeOverride !== null &&
+            typeof navTypeOverride !== "undefined" &&
+            navTypeOverride.length > 0
+              ? navTypeOverride
+              : "link";
+          gtm.navigation.createJson(
+            navElement,
+            navLink,
+            navAction,
+            navExternal,
+            navSocial,
+            jsonString.navCall,
+            jsonString.navDirections,
+            jsonString.navReferrer,
+            navId,
+            navType,
+            pushToDataLayer,
+          );
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    linkKeyDownJson: function (
+      jsonString,
+      href,
+      text,
+      element,
+      event,
+      navSocialOwnerParam,
+      navTypeOverrideParam,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isEnterOrReturnKey(event)) {
+          event.preventDefault();
+          gtm.navigation.linkJson(
+            jsonString,
+            href,
+            text,
+            element,
+            event,
+            navSocialOwnerParam,
+            "keydown",
+            navTypeOverrideParam,
+            pushToDataLayer,
+          );
+          element.click();
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    phoneJson: function (
+      jsonString,
+      href,
+      phoneNumber,
+      element,
+      event,
+      actionOverride,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isLeftMouseButtonOrEnterOrReturnKey(event)) {
+          let navCall = href.length > 0 ? href : "";
+          navCall = navCall.replace("(", "").replace(")", "-").replace(" ", "");
+          const navAction = gtm.utilities.getNavigationAction(
+            jsonString,
+            actionOverride,
+          );
+          const navElement = phoneNumber.length > 0 ? phoneNumber : "";
+          const navExternal = "FALSE";
+          const id = gtm.utilities.getStringValue(element.id, "");
+          const navId = id.length > 0 ? id : jsonString.navId;
+          gtm.navigation.createJson(
+            navElement,
+            navCall,
+            navAction,
+            navExternal,
+            "",
+            navCall,
+            "",
+            jsonString.navReferrer,
+            navId,
+            "phone-number",
+            pushToDataLayer,
+          );
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    phoneKeyDownJson: function (
+      jsonString,
+      href,
+      phoneNumber,
+      element,
+      event,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isEnterOrReturnKey(event)) {
+          event.preventDefault();
+          gtm.navigation.phoneJson(
+            jsonString,
+            href,
+            phoneNumber,
+            element,
+            event,
+            "keydown",
+            pushToDataLayer,
+          );
+          element.click();
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    socialMediaJson: function (
+      jsonString,
+      navSocialParam,
+      navSocialOwnerParam,
+      element,
+      event,
+      actionOverride,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isLeftMouseButtonOrEnterOrReturnKey(event)) {
+          const href = element.href;
+          const navLink = gtm.utilities.getFullUrl(href, jsonString);
+          const navExternal = gtm.utilities.isExternal(
+            navLink,
+            jsonString.url,
+            false,
+          );
+          const navSocialValue = gtm.utilities.getStringValue(
+            navSocialParam,
+            "",
+          );
+          const navSocial =
+            navSocialValue.length > 0 ? navSocialValue : jsonString.navSocial;
+          const navSocialOwnerValue = gtm.utilities.getStringValue(
+            navSocialOwnerParam,
+            "umpqua",
+          );
+          const navSocialOwner =
+            navSocialOwnerValue.length > 0 ? navSocialOwnerValue : "";
+          const id = gtm.utilities.getStringValue(element.id, "");
+          const navId = id.length > 0 ? id : jsonString.navId;
+          const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+          const navAction = gtm.utilities.getNavigationAction(
+            jsonString,
+            actionOverride,
+          );
+          gtm.navigation.createJson(
+            navSocial,
+            navLink,
+            navAction,
+            navExternal,
+            (navSocialOwner + "-" + navSocial).toLowerCase(),
+            jsonString.navCall,
+            jsonString.navDirections,
+            jsonString.navReferrer,
+            navId,
+            "social-media",
+            push,
+          );
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+    socialMediaKeyDownJson: function (
+      jsonString,
+      navSocialParam,
+      navSocialOwnerParam,
+      element,
+      event,
+      pushToDataLayer,
+    ) {
+      try {
+        if (gtm.utilities.isEnterOrReturnKey(event)) {
+          event.preventDefault();
+          gtm.navigation.socialMediaJson(
+            jsonString,
+            navSocialParam,
+            navSocialOwnerParam,
+            element,
+            event,
+            "keydown",
+            pushToDataLayer,
+          );
+          element.click();
+        }
+      } catch (errorMsg) {
+        gtm.error.json(errorMsg);
+      }
+    },
+  },
+  search: {
+    blog: {
+      json: function (
+        results,
+        skippedParam,
+        categoryParam,
+        mediaParam,
+        pushToDataLayer,
+      ) {
+        const skipped = gtm.utilities.getStringValue(skippedParam, "0");
+        const moreResults = skipped === "0" ? "FALSE" : "TRUE";
+        const category = gtm.utilities.sanitize(
+          gtm.utilities.getStringValue(categoryParam, ""),
+        );
+        const media = gtm.utilities.sanitize(
+          gtm.utilities.getStringValue(mediaParam, ""),
+        );
+        const filters = "query:|category:" + category + "|media:" + media;
+        const searchJsonString =
+          '{ "search": { "term" : "", "results" : "' +
+          results +
+          '", ' +
+          '"searchType" : "blog", "moreResults" : "' +
+          moreResults +
+          '", "category" : "' +
+          category +
+          '", ' +
+          '"media" : "' +
+          media +
+          '", "filters" : "' +
+          filters +
+          '" } }';
+        try {
+          const searchJsonObject = JSON.parse(searchJsonString);
+          const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+          if (push) {
+            gtm.windowsDataLayer.pushObject(searchJsonObject);
+          }
+          return searchJsonObject;
+        } catch (errorMsg) {
+          return gtm.error.json(errorMsg);
+        }
+      },
+    },
+    json: function (
+      term,
+      results,
+      searchType,
+      skippedParam,
+      filtersParam,
+      pushToDataLayer,
+    ) {
+      const skipped = gtm.utilities.getStringValue(skippedParam, "0");
+      const moreResults = skipped === "0" ? "FALSE" : "TRUE";
+      const filters = gtm.utilities.getStringValue(filtersParam, "");
+      const searchJsonString =
+        '{ "search": { "term" : "' +
+        gtm.utilities.sanitize(term) +
+        '", "results" : "' +
+        results +
+        '", ' +
+        '"searchType" : "' +
+        searchType +
+        '", "moreResults" : "' +
+        moreResults +
+        '", "filters" : "' +
+        gtm.utilities.sanitize(filters) +
+        '" } }';
+      try {
+        const searchJsonObject = JSON.parse(searchJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(searchJsonObject);
+        }
+        return searchJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  transactions: {
+    json: function (
+      productName,
+      productId,
+      timestamp,
+      submissionId,
+      confirmationId,
+      lineOfBusiness,
+      category,
+      pushToDataLayer,
+    ) {
+      const transactionsJsonString =
+        '{ "transactions" : { "productName" : "' +
+        productName +
+        '", "productId" : "' +
+        productId +
+        '", ' +
+        '"timestamp" : "' +
+        timestamp +
+        '", "submissionId" : "' +
+        submissionId +
+        '", "confirmationId" : "' +
+        confirmationId +
+        '", ' +
+        '"lineOfBusiness" : "' +
+        lineOfBusiness +
+        '", "category" : "' +
+        category +
+        '" } }';
+      try {
+        const transactionsJsonObject = JSON.parse(transactionsJsonString);
+        const push = gtm.utilities.getBooleanValue(pushToDataLayer, true);
+        if (push) {
+          gtm.windowsDataLayer.pushObject(transactionsJsonObject);
+        }
+        return transactionsJsonObject;
+      } catch (errorMsg) {
+        return gtm.error.json(errorMsg);
+      }
+    },
+  },
+  utilities: {
+    getBaseUrl: function (jsonString) {
+      try {
+        if (jsonString === null || typeof jsonString === "undefined")
+          throw "Invalid Parameter";
+        let baseUrl = jsonString.url;
+        let index = baseUrl.indexOf("//");
+        if (index >= 0) {
+          index = baseUrl.indexOf("/", index + 2);
+          if (index >= 0) {
+            baseUrl = baseUrl.substring(0, index);
+          }
+        }
+        return baseUrl;
+      } catch (error) {
+        return "";
+      }
+    },
+    getBooleanValue: function (value, defaultValue) {
+      if (value === null || typeof value === "undefined") {
+        if (defaultValue === null || typeof defaultValue === "undefined") {
+          return true;
+        } else {
+          switch (typeof defaultValue) {
+            case "boolean":
+              return defaultValue;
+            case "string":
+              if (defaultValue.toLowerCase() === "false") {
+                return false;
+              } else {
+                return true;
+              }
+            default:
+              return true;
+          }
+        }
+      }
+      switch (typeof value) {
+        case "boolean":
+          return value;
+        case "string":
+          if (value.toLowerCase() === "false") {
+            return false;
+          } else {
+            return true;
+          }
+        default:
+          return true;
+      }
+    },
+    getBrowser: function () {
+      if (
+        navigator === undefined ||
+        navigator === null ||
+        navigator.userAgent === undefined ||
+        navigator.userAgent === null
+      ) {
+        return "unknown";
+      }
+      const userAgent = navigator.userAgent.toLowerCase();
+      if (
+        (userAgent.indexOf("trident") >= 0 || userAgent.indexOf("msie")) >= 0 &&
+        userAgent.indexOf("rv:")
+      ) {
+        return "ie";
+      }
+      if (userAgent.indexOf("edg/") >= 0 || userAgent.indexOf("edge") >= 0) {
+        return "edge";
+      }
+      if (userAgent.indexOf("firefox") >= 0) {
+        return "firefox";
+      }
+      if (userAgent.indexOf("opr/") >= 0 || userAgent.indexOf("opera") >= 0) {
+        return "opera";
+      }
+      if (userAgent.indexOf("chrome") >= 0) {
+        return "chrome";
+      }
+      if (userAgent.indexOf("safari") >= 0) {
+        return "safari";
+      }
+      return "unknown";
+    },
+    getFullUrl: function (href, jsonString) {
+      try {
+        let url =
+          href.toString().length > 0
+            ? href.toString()
+            : jsonString.navLink.toString();
+        const baseUrl = gtm.utilities.getBaseUrl(jsonString);
+        if (url.length < 4 || url.substr(0, 4).toLowerCase() !== "http") {
+          url = baseUrl + url;
+        }
+        return url;
+      } catch (error) {
+        return "";
+      }
+    },
+    getNavigationAction: function (jsonString, actionOverrideParam) {
+      try {
+        const actionOverride = gtm.utilities.getStringValue(
+          actionOverrideParam,
+          "",
+        );
+        return actionOverride !== null &&
+          typeof actionOverride !== "undefined" &&
+          actionOverride.length > 0
+          ? actionOverride
+          : jsonString.navAction;
+      } catch (error) {
+        return "unknown";
+      }
+    },
+    getStringValue: function (value, defaultValue) {
+      if (value === null || typeof value === "undefined") {
+        if (
+          defaultValue === null ||
+          typeof defaultValue === "undefined" ||
+          typeof defaultValue !== "string"
+        ) {
+          return "";
+        } else {
+          return defaultValue.toString();
+        }
+      }
+      return value.toString();
+    },
+    isEnterOrReturnKey: function (event) {
+      try {
+        if (
+          event === null ||
+          typeof event === "undefined" ||
+          event.type.toLowerCase() !== "keydown"
+        ) {
+          return false;
+        }
+        const key = event.key.toLowerCase();
+        return key === "return" || key === "enter";
+      } catch (error) {
+        return false;
+      }
+    },
+    isExternal: function (link, pageUrl, isBaseUrlParam) {
+      try {
+        let external = "FALSE";
+        if (link.length > 3 && link.substr(0, 4).toLowerCase() === "http") {
+          const isBaseUrl = gtm.utilities.getBooleanValue(isBaseUrlParam, true);
+          const baseUrl = isBaseUrl
+            ? pageUrl
+            : gtm.utilities.getBaseUrl(pageUrl);
+          if (
+            baseUrl.length > 0 &&
+            link.length >= baseUrl.length &&
+            link.substr(0, baseUrl.length).toLowerCase() !==
+              baseUrl.toLowerCase()
+          ) {
+            external = "TRUE";
+          }
+        }
+        return external;
+      } catch (error) {
+        return "FALSE";
+      }
+    },
+    isLeftMouseButtonOrEnterOrReturnKey: function (event) {
+      try {
+        if (
+          event === null ||
+          typeof event === "undefined" ||
+          event.type === null ||
+          typeof event.type === "undefined"
+        ) {
+          return false;
+        }
+        if (event.type.toLowerCase() === "mousedown") {
+          return event.which.toString() === "1";
+        }
+        if (event.type.toLowerCase() === "keydown") {
+          return gtm.utilities.isEnterOrReturnKey(event);
+        }
+        return false;
+      } catch (error) {
+        return false;
+      }
+    },
+    sanitize: function (value, removeQuotesParam, decodeParam) {
+      const removeQuotes = gtm.utilities.getBooleanValue(
+        removeQuotesParam,
+        true,
+      );
+      const decode = gtm.utilities.getBooleanValue(decodeParam, true);
+      var sanitized = "";
+      if (value === null || typeof value === "undefined" || value.length < 1) {
+        return sanitized;
+      }
+      sanitized = value.toString();
+      if (removeQuotes) {
+        sanitized = sanitized.replace(/['"]+/g, "");
+      }
+      if (decode) {
+        sanitized = decodeURI(sanitized);
+      }
+      return sanitized;
+    },
+  },
+  windowsDataLayer: {
+    pushObject: function (object) {
+      if (window.dataLayer === null || window.dataLayer === "undefined") {
+        window.dataLayer = [];
+      }
+      window.dataLayer.push(object);
+    },
+    resetDataLayer: function () {
+      window.dataLayer = [];
+    },
+  },
+};

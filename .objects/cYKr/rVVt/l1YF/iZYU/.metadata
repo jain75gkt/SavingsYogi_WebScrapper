@@ -1,0 +1,14 @@
+﻿{
+  "Name": "Set my location",
+  "Type": "Element",
+  "TaxonomyType": "Button",
+  "Id": "iZYUFclxkEC2ub0pok4q8A",
+  "Reference": "wmoQtc-7M02aRki2x1FIUw/iZYUFclxkEC2ub0pok4q8A",
+  "ParentRef": "wmoQtc-7M02aRki2x1FIUw/l1YFLKJAfESS60wjFLOweA",
+  "Created": "2025-12-26T14:36:38.2657149Z",
+  "Updated": "2025-12-26T14:36:38.2657149Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=25.10.21.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=25.10.1.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

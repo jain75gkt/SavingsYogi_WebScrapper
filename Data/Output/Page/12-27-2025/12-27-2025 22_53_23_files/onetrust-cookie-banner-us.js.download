@@ -1,0 +1,22 @@
+function OptanonWrapper() {
+    // Check if banner div is available
+    if (document.getElementById('onetrust-banner-sdk')) {
+        const hideCookieBannerCSS = css => {
+          let cookieBannerStyleElement = document.createElement('style');
+          cookieBannerStyleElement.type = 'text/css';
+          cookieBannerStyleElement.innerText = css;
+          document.head.appendChild(cookieBannerStyleElement);
+          return cookieBannerStyleElement;
+        };
+        const geoData = OneTrust.getGeolocationData();
+    const countryCode = geoData.country.toLowerCase();
+    const stateCode = geoData.state.toLowerCase();
+      if(countryCode !== 'us' && stateCode !== 'ca') { 
+      
+        hideCookieBannerCSS('#onetrust-banner-sdk, .onetrust-pc-dark-filter {display: none !important;}');
+    }if(countryCode === 'us' && stateCode !== 'ca') {
+
+        hideCookieBannerCSS('#onetrust-banner-sdk, .onetrust-pc-dark-filter {display: none !important;}');
+    }
+    }
+}

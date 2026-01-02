@@ -1,0 +1,10 @@
+utag.globals.dle.enrichments['prod-_-dep-prod-viewaccounttypes-savings-rewards-savings-account'] = {
+    "attributes": {
+        "updated": "2023-01-27-142941",
+        "page-id": "Dep:Prod:ViewAccountTypes:Savings;rewards-savings-account"
+    },
+    "pageSettings": {
+        "pixelTag": []
+    },
+    "customEventSettings": []
+}

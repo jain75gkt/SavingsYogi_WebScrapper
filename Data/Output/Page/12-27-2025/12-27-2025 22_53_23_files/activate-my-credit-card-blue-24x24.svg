@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" id="prefix__Layer_1" height="24" width="24" view-box="0 0 24 24" enable-background="new 0 0 48 48" xml-space="preserve" role="img">
+  <style>
+    .prefix__st0 {
+      fill: #0875bb;
+    }
+  </style>
+  <path class="prefix__st0" d="M20 5.1H4c-1.1 0-2 .9-2 2v9.7c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7.1c0-1.1-.9-2-2-2zm0 2v2.3H4V7.1h16zM4 16.9v-5.5h16v5.5H4z"/>
+  <path class="prefix__st0" d="M13.5 13.4h-7c-.6 0-1 .4-1 1s.4 1 1 1h7c.6 0 1-.4 1-1s-.4-1-1-1z"/>
+</svg>

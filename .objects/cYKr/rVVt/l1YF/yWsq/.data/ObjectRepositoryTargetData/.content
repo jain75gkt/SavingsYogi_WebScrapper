@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="N2vqKH6SRU2tqwuzTv0owA" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="td.com/us/en/personal-banking/certificates-of-deposit" CVScreenId="1dd2592f-273a-4a3f-a67b-57245e115ba5" CvElementArea="774, 555, 390, 55" CvType="InputBox" DesignTimeRectangle="775, 556, 388, 53" ElementType="DropDown" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl id='dropdownState' tag='SELECT' type='' class='cmp-droplist__select state_list' aaname='State' matching:id='fuzzy' fuzzylevel:id='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' /&gt;" Guid="7ee0ab9e-729a-41c7-9664-4ef1b3fd42e2" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposits: View CD Rates &amp;amp; Term Options | TD Bank' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="1dd2592f-273a-4a3f-a67b-57245e115ba5" CvTextArea="774, 520, 48, 17" CvTextArgument="State" CvType="Text" DesignTimeRectangle="775, 520, 47, 18" ElementType="Text" FuzzySelectorArgument="&lt;webctrl parentid='cmp-region-selector-modal' tag='LABEL' type='' class='' aaname='State' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' matching:class='fuzzy' fuzzylevel:class='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:innerText='State' /&gt;" Guid="82ef2ceb-99bb-499f-a1a2-32df1d56a0c6" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="beec14a9b845d08913229da344c37265.png" xmlns="">0gU389cDxn0GlPV8yPnSwfA</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">SelectItem</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

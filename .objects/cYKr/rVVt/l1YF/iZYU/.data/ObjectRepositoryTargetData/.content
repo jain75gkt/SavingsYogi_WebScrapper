@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="TRrOjbkojUyXth1U43yNLw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="td.com/us/en/personal-banking/certificates-of-deposit" CVScreenId="b7a869fd-992a-45aa-b1cd-ada8bedb4a13" CvElementArea="773, 644, 392, 55" CvTextArea="892, 661, 151, 20" CvTextArgument="Set my location" CvType="Button" DesignTimeRectangle="775, 646, 388, 52" ElementType="Button" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl class='cmp-button' parentid='cmp-region-selector-modal' tag='BUTTON' type='button' aaname='                             Set my location                         ' matching:class='fuzzy' fuzzylevel:class='0.0' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:innerText='Set my location' /&gt;" Guid="b7ffa636-16a1-48ae-a89a-862a7fd1faa0" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposits: View CD Rates &amp;amp; Term Options | TD Bank' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="b7a869fd-992a-45aa-b1cd-ada8bedb4a13" CvElementArea="773, 644, 392, 55" CvTextArea="892, 661, 151, 20" CvTextArgument="Set my location" CvType="Button" DesignTimeRectangle="894, 662, 150, 20" ElementType="Text" FuzzySelectorArgument="&lt;webctrl class='cmp-button__text' parentid='cmp-region-selector-modal' tag='SPAN' type='' aaname='Set my location' matching:class='fuzzy' fuzzylevel:class='0.0' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:innerText='Set my location' /&gt;" Guid="245c3355-0b7a-432c-b4e1-b133ccff1ef0" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="af5f0951090d0c353204e63b71b4d73d.png" xmlns="">0CBV1GkwjIk-wu_SKO-OAxw</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">KeyboardShortcut</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>
