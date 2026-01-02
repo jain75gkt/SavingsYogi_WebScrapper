@@ -1,0 +1,17 @@
+
+
+@font-face {
+    font-family: 'igbr-Circular Std Book';
+    
+    
+    src: 
+        url('https://branding.jifo.co/b67ad8f4-a979-4736-8b36-955b781c4bb6_Circular-Std-Book.woff2') format('woff2'),
+        
+        url('https://branding.jifo.co/d77dd0a1-f272-47d8-9232-62f08ffa8bdc_Circular-Std-Book.woff') format('woff'),
+        
+        url('https://branding.jifo.co/44e67464-e155-43d4-9304-166b7ac4be9d_Circular-Std-Book.ttf') format('truetype'),
+        
+        url('https://branding.jifo.co/beaa1421-4af1-4c14-b7e9-8490521c1345_Circular-Std-Book.otf') format('opentype');
+        
+}
+

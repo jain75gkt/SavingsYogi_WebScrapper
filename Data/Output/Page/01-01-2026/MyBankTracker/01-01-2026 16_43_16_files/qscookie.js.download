@@ -1,0 +1,183 @@
+/****
+ #AB test for frontend listing 
+ Use full for Akamai caching . 
+ created By : Mayuresh Band
+ version: 1.24
+ changes for campaignParams
+ **/
+
+ if (typeof QS_Cookie == 'undefined') {
+    var QS_Cookie = {};
+    var urlParams = {};
+    var campaignParams = ['ad', 'adposition', 'dev', 'fb', 'mt', 'fb_ad_id', 'fb_adset_id', 'fb_campaign_id', 'placement', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'fbclid', 'campaignid', 'adgroupid', 'targetid', 'feedid', 'extensionid', 'model', 'network', 'ploc', 'iloc', 'src','zipcode','var2','trn_id'];
+    var extClickIdParams = ['gclid', 'gbraid', 'wbraid', 'msclkid', 'fbclid'];
+    var match;
+    (function (window, document) {
+        QS_Cookie = {
+            pl: /\+/g,
+            search: /([^&=]+)=?([^&]*)/g,
+            URL_QUERY: window.location.search.substring(1),
+            allCookies: [].concat(campaignParams,
+                                  extClickIdParams,
+                                  ['ni_lp_url', 'ni_session_ref'],
+                                  ['quadlink', 'tkpixel']),
+
+      inititlize: function () {
+                console.log('=====QSCOOKIE init=====');
+                QS_Cookie.check_src_inURL();
+                QS_Cookie.recordInitialUrls();
+                QS_Cookie.setCookieFromGetParams();
+                console.log('=====QSCOOKIE init end=====');
+            },
+            recordInitialUrls: function () {
+
+                if (QS_Cookie.getCookie('ni_lp_url') == null && window.location) {
+                    QS_Cookie.setCookie('ni_lp_url', encodeURIComponent(window.location), 1);
+                }
+                if (QS_Cookie.getCookie('ni_session_ref') == null && document.referrer) {
+                    QS_Cookie.setCookie('ni_session_ref', encodeURIComponent(document.referrer), 1);
+                }
+            },
+            setCookieFromGetParams: function () {
+                if (QS_Cookie.URL_QUERY.length == 0) {
+                    return;
+                }
+
+
+
+                while (match = QS_Cookie.search.exec(QS_Cookie.URL_QUERY)) {
+
+                    urlParams[QS_Cookie.decode(match[1])] = QS_Cookie.decode(match[2]);
+                    cookiename = QS_Cookie.decode(match[1]);
+
+                    // skip query params that are not part of `allCookies`
+                    if (QS_Cookie.allCookies.indexOf(cookiename) < 0) {
+                      continue;
+                    }
+
+                    if (QS_Cookie.getCookie(cookiename) == null) {
+
+                        /* qs_sesref param overrides default referrer */
+                        cookiename = (cookiename == 'qs_sesref')
+                            ? 'ni_session_ref'
+                            : cookiename;
+
+                        QS_Cookie.setCookie(cookiename, encodeURIComponent(QS_Cookie.decode(match[2])), 1);
+                    }
+                }
+            },
+
+            decode: function (s) {
+                return (s == null) ? s : decodeURIComponent(s.replace(QS_Cookie.pl, " "));
+            },
+
+            setCookie: function (name, value, days) {
+
+                var expires = "";
+                if (days) {
+                    var dateobj = new Date();
+
+                    dateobj.setTime(dateobj.getTime() + (12 * 60 * 60 * 1000));//set time to 12 hrs
+
+                    expires = "; expires=" + dateobj.toGMTString();/* set time to 12 so close seesion cookie delete */
+
+                }
+                document.cookie = name + "=" + (value || "") + expires + "; path=/;";
+            },
+            getCookie: function (name) {
+                var nameEQ = name + "=";
+                var ca = document.cookie.split(';');
+                for (var i = 0; i < ca.length; i++) {
+                    var c = ca[i];
+                    while (c.charAt(0) == ' ')
+                        c = c.substring(1, c.length);
+                    if (c.indexOf(nameEQ) == 0)
+                        return c.substring(nameEQ.length, c.length);
+                }
+                return null;
+            },
+            getRandomInt: function (max) {
+                return Math.floor(Math.random() * Math.floor(max));
+            },
+            getQuadUrl: function () {
+                var quadUrl = QS_Cookie.getCookie('quadlink');
+                if (!quadUrl) { return null; }
+                quadUrl = QS_Cookie.decode(quadUrl);
+
+                for (let p of campaignParams) {
+                    let t = QS_Cookie.getCookie(p);
+                    if (t) {
+                        quadUrl += '&' + p + '=' + t;
+                    }
+                }
+
+                return quadUrl;
+            },
+
+            set_tracking_params() {
+
+                var trackingParams = {};
+
+                /* Landing page url */
+                if (QS_Cookie.getCookie('ni_lp_url') != null) {
+                    trackingParams.ni_lp_url = QS_Cookie.decode(QS_Cookie.getCookie('ni_lp_url'));
+                }
+
+                /* Session referring url */
+                if (QS_Cookie.getCookie('ni_session_ref') != null) {
+                    trackingParams.ni_session_ref = QS_Cookie.decode(QS_Cookie.getCookie('ni_session_ref'));
+                }
+
+                /* Tkpixel */
+                if (QS_Cookie.getCookie('tkpixel') != null) {
+                    trackingParams.tkpixel =  QS_Cookie.decode(QS_Cookie.getCookie('tkpixel'));
+                }
+
+                /* Trn id */
+                if (QS_Cookie.getCookie('trn_id') != null) {
+                    trackingParams.trn_id =  QS_Cookie.decode(QS_Cookie.getCookie('trn_id'));
+                }
+
+                /* External Click Id */
+                for (let p of extClickIdParams) {
+                    let t = QS_Cookie.decode(QS_Cookie.getCookie(p));
+                    if (t) {
+                        trackingParams.ext_click_id = t;
+                        break;
+                    }
+                }
+
+                return trackingParams;
+            },
+            deleteCookies() {
+
+                var cookies = document.cookie.split(';');
+
+                // Iterate through each cookie
+                cookies.forEach(function (cookie) {
+                    // Split cookie into name and value
+                    var cookieParts = cookie.split('=');
+                    var name = cookieParts[0].trim();
+                    // If the cookie name matches, delete the cookie
+                    if (QS_Cookie.allCookies.indexOf(name) >= 0) {
+                      document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;';
+                    }
+                });
+
+            },
+            check_src_inURL: function () {
+                const urlParams = new URLSearchParams(QS_Cookie.URL_QUERY);
+                const src = urlParams.get('src');
+                if (src) {
+
+                    QS_Cookie.deleteCookies();
+                }
+
+            },
+
+        }
+
+        QS_Cookie.inititlize();
+
+    })(window, document);
+}

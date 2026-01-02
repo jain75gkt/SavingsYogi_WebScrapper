@@ -1,0 +1,15 @@
+getUserZipcode();async function getUserZipcode(){try{let response=await fetch("https://autoinsurance.insure.com/api/ip2geo",{redirect:"manual",mode:"cors"})
+if(!response.ok){const message=`An error has occured: ${response.status}`;throw new Error(message)}
+let location=await response.json();if(location.country=='US'&&location.zip){zipcode=location.zip}else{zipcode='94404'}}catch(error){console.error('ERROR FETCHING ZIPCODE',error);zipcode='94404'}
+$('.zip-code-section .zip-input').val(zipcode)}
+var $=jQuery.noConflict();$(document).ready(function(){if($(window).width()<=1199){checkVisibility();}
+if($('#get-rates-popup-sidebar').length>0&&$(window).width()>=1199){$('#get-rates-popup').hide()}
+$(window).on('scroll resize',function(){if($(window).width()<=1199){checkVisibility()}else if($('#get-rates-popup-sidebar').length>0){$('#get-rates-popup').hide()}});$('.get-rates-popup-component .get-rates-btn, .get-rates-popup-component .zip-close').on('click',function(){jQuery(".get-rates-popup-component .get-rates-btn").toggleClass("d-none");jQuery(".get-rates-popup-component .get-rates-box").toggleClass("d-none");});$('.zip-code-section .zip-input').keyup(function(){$(this).val(function(index,value){return value.replace(/[^0-9]/g,"")})});$('.zip-code-section .zip-input').focus(function(){$('.zip-code-section .errormsg').hide()});$('.getratesbox .getrates_btn').on('click',function(){handleGetRates(this)});$('.zip-code-section .zip-input').on('keydown',function(e){if(e.key==='Enter'){e.preventDefault();let getRatesBtn=$(this).closest('.getratesbox').find('.getrates_btn');getRatesBtn.click()}})})
+function checkVisibility(){const $popup=$('#get-rates-popup');const $firstH2=$('h2').first();if($popup.length===0)return;const windowHeight=$(window).height();const scrollTop=$(window).scrollTop();const documentHeight=$(document).height();if($firstH2.length>0&&(documentHeight>=windowHeight*1.5)){const h2Bottom=$firstH2.offset().top+$firstH2.outerHeight();const viewportMiddle=scrollTop+(windowHeight/2);if(viewportMiddle>h2Bottom&&(documentHeight>=windowHeight*1.5)){$popup.show();}else{$popup.hide();}}
+else
+if(documentHeight<=windowHeight*1.5){$popup.show();return;}
+else{$popup.show();}}
+function handleGetRates(btn){let getRatesBox=$(btn).closest('.getratesbox');let zipcode=getRatesBox.find('.zip-input').val();if(!/^0{1,4}$/.test(zipcode)&&zipcode.length>0&&zipcode.length<5){zipcode=zipcode.padStart(5,'0');getRatesBox.find('.zip-input').val(zipcode)}
+let errorMsg=getRatesBox.find('.errormsg');if(isValidZipCode(zipcode)){getRatesListing(zipcode)}else{errorMsg.css('display','block')}}
+function getRatesListing(zipcode){let baseUrl=window.location.origin;var newUrl=baseUrl+'/getrates/?zip='+encodeURIComponent(zipcode);window.open(newUrl,'_blank')}
+function isValidZipCode(zipcode){const zipCodePattern=/^(?!00000$)\d{5}(-\d{4})?$/;return zipCodePattern.test(zipcode)}

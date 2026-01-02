@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="HOp_MGpEwku7z4yVmQKkAg" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="wellsfargo.com/savings-cds/certificate-of-deposit" CVScreenId="72a774bf-ddb4-4361-b9f7-8f39e8a2b9fb" CvTextArea="785, 409, 282, 20" CvTextArgument="What's your home ZIP code?" CvType="Text" DesignTimeRectangle="747, 375, 445, 90" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl parentclass='zip-code-modal' idx='2' /&gt;" Guid="eecb3d0a-8b96-4e8a-ad81-343fada544aa" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Open a Certificate of Deposit (CD) Account Online | Wells Fargo' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="72a774bf-ddb4-4361-b9f7-8f39e8a2b9fb" CvElementArea="854, 693, 228, 56" CvTextArea="924, 712, 88, 18" CvTextArgument="Continue" CvType="Button" DesignTimeRectangle="859, 696, 220, 50" ElementType="Button" FuzzySelectorArgument="&lt;webctrl parentclass='zip-code-content' check:text='Continue' /&gt;" Guid="566cf1f6-6f3a-4123-a9fc-ce7b41b2aa05" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="5ffe5db8661cefdbd7df92ac82327be6.png" xmlns="">0uUv0_H33Qk6GTR3UJyZkRg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">CheckState</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

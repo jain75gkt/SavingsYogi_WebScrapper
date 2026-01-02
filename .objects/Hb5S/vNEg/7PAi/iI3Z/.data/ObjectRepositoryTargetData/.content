@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="1P0GuORnl0yRkwapbtM5Tw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="newtab" CVScreenId="b591c1a6-e698-4487-9b48-fb7e42e4db97" CvTextArea="820, 340, 90, 21" CvTextArgument="Command" CvType="Text" DesignTimeRectangle="810, 337, 725, 30" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;ctrl name='DevTools' role='document' matching:name='fuzzy' fuzzylevel:name='0.0' /&gt;&lt;ctrl name='Quick open prompt Suggestion' role='editable text' automationid='' matching:name='fuzzy' fuzzylevel:name='0.0' matching:automationid='fuzzy' fuzzylevel:automationid='0.0' /&gt;" Guid="9d05ef99-2a62-40d0-8887-64f445868176" IsResponsive="True" ScopeSelectorArgument="&lt;wnd app='chrome.exe' cls='Chrome_WidgetWin_1' title='New Tab - Google Chrome' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="b591c1a6-e698-4487-9b48-fb7e42e4db97" CvTextArea="762, 342, 37, 18" CvTextArgument="Run" CvType="Text" DesignTimeRectangle="763, 341, 36, 22" ElementType="Text" FuzzySelectorArgument="&lt;ctrl name='DevTools' role='document' matching:name='fuzzy' fuzzylevel:name='0.0' /&gt;&lt;ctrl name='Run' role='text' automationid='' matching:name='fuzzy' fuzzylevel:name='0.0' matching:automationid='fuzzy' fuzzylevel:automationid='0.0' check:text='Run' /&gt;" Guid="61485f3e-f1a1-440f-849c-df71d872fe11" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="fdce62cb0c027ac84ee715ee1f5b458f.png" xmlns="">0FI6Yk_fQQE2Wd5j1-47Wdg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">TypeInto</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

@@ -1,0 +1,4 @@
+window.dataLayer = window.dataLayer || [];
+function gtagWealth() { window.dataLayer.push(arguments); }
+gtagWealth('js', new Date());
+gtagWealth('config', 'AW-1069166532');

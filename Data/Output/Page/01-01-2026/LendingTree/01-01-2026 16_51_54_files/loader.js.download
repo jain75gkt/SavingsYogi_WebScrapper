@@ -1,0 +1,7 @@
+!(function (t, e, n, s, b, r) { var a, c, l; (a =
+e.getElementsByTagName("script")[0]), ((c = e.createElement("script")).type =
+"text/javascript"), (c.async = !0), (c.src = n + "/" + s),
+a.parentNode.insertBefore(c, a); t.Intercept = { ...t.Intercept, interceptDeployId: b };
+((l=e.createElement("script")).type="text/javascript"), (l.async=!0),
+(l.src=n+'/'+r), a.parentNode.insertBefore(l, a); })( window, document, "https://intercept-widget.questionpro.com", "frontend/032/js/intercept.js","032","frontend/032/js/locationListener.js"
+);

@@ -1,0 +1,13 @@
+﻿{
+  "Name": "Edge Certificate of Deposit  High Yield CD Ra",
+  "Type": "Screen",
+  "Id": "NcKMWWw4pU-R0oGVzA5o3A",
+  "Reference": "wmoQtc-7M02aRki2x1FIUw/NcKMWWw4pU-R0oGVzA5o3A",
+  "ParentRef": "wmoQtc-7M02aRki2x1FIUw/dV7gDpRNfE6Sh655DVh2IQ",
+  "Created": "2025-12-31T18:17:56.5456778Z",
+  "Updated": "2025-12-31T18:17:56.5456778Z",
+  "CreatedBy": [
+    "UiPath.UIAutomationCore, Version=25.10.21.0, Culture=neutral, PublicKeyToken=null",
+    "UiPath.Platform, Version=25.10.1.0, Culture=neutral, PublicKeyToken=null"
+  ]
+}

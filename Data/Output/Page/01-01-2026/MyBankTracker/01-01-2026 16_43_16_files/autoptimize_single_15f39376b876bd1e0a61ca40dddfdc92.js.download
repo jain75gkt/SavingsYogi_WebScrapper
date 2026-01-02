@@ -1,0 +1,5 @@
+var $=jQuery.noConflict();function updateRatingsNew(){$('.star-rating-new').each(function(){if($(this).find('.star_span').length==0){var rating=($(this).parents('.star-editor-rating').siblings('.text_star_rating').length>0)?parseFloat($(this).parents('.star-editor-rating').siblings('.text_star_rating').text()):parseFloat($(this).text());var color='#04a052';if(rating!==''&&!isNaN(rating)&&rating!='undefined'){var fullStars=Math.floor(rating);var decimal=(rating-fullStars).toFixed(1);var starsCssHtml='';for(var i=0;i<fullStars;i++){starsCssHtml+='linear-gradient(to right, '+color+' 100%, #ddd 0%), ';}
+if(decimal>0){var fractionalPer=(decimal*100);starsCssHtml+='linear-gradient(to right, '+color+' '+fractionalPer+'%, #ddd 50%), ';}
+var emptyStars=5-fullStars-(decimal>0?1:0);for(var j=0;j<emptyStars;j++){starsCssHtml+='linear-gradient(to right, '+color+' 0%, #ddd 0%), ';}
+starsCssHtml=starsCssHtml.trim().replace(/,$/,'');var starsHtml='<span class="star_span" style="background-image:'+starsCssHtml+';"></span>';$(this).html(starsHtml);}else{$(this).addClass('d-none');}}});}
+updateRatingsNew();

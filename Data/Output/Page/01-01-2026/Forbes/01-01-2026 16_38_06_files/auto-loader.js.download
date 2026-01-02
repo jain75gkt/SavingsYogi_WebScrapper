@@ -1,0 +1,99 @@
+import { I as b } from "./index-0J_PAmb9.js";
+const s = /* @__PURE__ */ new Map();
+let l = null;
+const v = () => {
+  s.clear(), l?.disconnect(), l = null;
+  const e = document.createElement("div");
+  e.style.display = "none", e.id = "wui_invoca_phone_replacement", document.body.appendChild(e), w(e), document.body.addEventListener(b, (o) => {
+    const { telephone: t, cb: n } = o.detail, a = g(t), r = "invoca_" + a, c = document.getElementById(r), u = "tel:";
+    if (!c) {
+      const i = document.createElement("a");
+      i.id = r, i.href = u + a, i.innerText = t.replace(u, ""), i.dataset.originalNumber = t, e.appendChild(i);
+    }
+    if (c && c.href !== "tel:" + a) {
+      n({ href: c.href, text: c.innerText });
+      return;
+    }
+    const d = s.get(r);
+    d ? d.cb.push(n) : s.set(r, { cb: [n] }), f();
+  });
+};
+function w(e) {
+  l = new MutationObserver((o) => {
+    o.forEach((t) => {
+      if (t.type != "attributes" || t.attributeName != "href")
+        return;
+      const n = t.target;
+      if (n && n.tagName === "A") {
+        const a = n.href, r = s.get(n.id);
+        r && (r.cb.forEach((c) => {
+          c({ href: a, text: n.innerText });
+        }), s.delete(n.id));
+      }
+    });
+  }), l.observe(e, {
+    attributes: !0,
+    attributeOldValue: !0,
+    attributeFilter: ["href"],
+    subtree: !0
+  });
+}
+let m;
+const f = () => {
+  clearTimeout(m), m = setTimeout(() => {
+    E();
+  }, 200);
+};
+function E() {
+  window.Invoca?.PNAPI?.run ? (window.Invoca.PNAPI.resetRun(), window.Invoca.PNAPI.run()) : f();
+}
+function g(e) {
+  return e.replace("tel:", "").replace(/[^\d+]/g, "");
+}
+const p = "aacb3e9";
+function y() {
+  const e = document.querySelectorAll("[data-hydration-hash]");
+  for (const o of e)
+    if (o.getAttribute("data-hydration-hash") !== p) {
+      const t = document.createElement(o.tagName);
+      for (const n of o.attributes)
+        t.setAttribute(n.name, n.value);
+      o.parentNode?.replaceChild(t, o);
+    } else
+      break;
+}
+function N() {
+  return import.meta.url.replace(/(\/|\\)([^/\\]+?)$/, "");
+}
+const I = new MutationObserver((e) => {
+  for (const { addedNodes: o } of e)
+    for (const t of o)
+      t.nodeType === Node.ELEMENT_NODE && h(t);
+});
+async function h(e) {
+  const o = e instanceof Element ? e.tagName.toLowerCase() : "", t = o?.startsWith("wui-"), n = [...e.querySelectorAll(":not(:defined)")].map((r) => r.tagName.toLowerCase()).filter((r) => r.startsWith("wui-"));
+  t && !customElements.get(o) && n.push(o);
+  const a = [...new Set(n)];
+  await Promise.allSettled(a.map((r) => T(r)));
+}
+function T(e) {
+  if (customElements.get(e))
+    return Promise.resolve();
+  const o = e.replace(/^wui-/i, ""), t = N() + `/${o}.${p}.js`;
+  return new Promise((n, a) => {
+    import(t).then(() => n()).catch(
+      () => a(new Error(`Unable to autoload <${e}> from ${t}`))
+    );
+  });
+}
+async function A() {
+  await import("./lit-element-hydrate-support-2Hq-CM9L.js"), h(document.body), I.observe(document.documentElement, {
+    subtree: !0,
+    childList: !0
+  }), v();
+}
+y();
+A();
+export {
+  h as discover
+};

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="0PaLqSOkLkG9B3creB9Slw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="bing.com/search" CVScreenId="550bc5a4-3d3f-44e3-aa1e-060917b03910" CvTextArea="779, 804, 83, 35" CvTextArgument="APY" CvType="Text" DesignTimeRectangle="777, 803, 86, 36" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl idx='5' innertext='APY' /&gt;" Guid="b5d428eb-d05d-4067-8173-d1b6b75a494f" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="550bc5a4-3d3f-44e3-aa1e-060917b03910" CvTextArea="665, 804, 110, 35" CvTextArgument="3.75%" CvType="Text" DesignTimeRectangle="665, 803, 111, 35" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='3.75' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' parentid='responsive' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' tag='SPAN' type='' class='cd-rate-18-mon' matching:class='fuzzy' fuzzylevel:class='0.0' check:innerText='3.75' /&gt;" Guid="d5fe59c9-8b9f-491e-80a0-d7e4bf617962" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="bc0489c8c710e0e461abc62bfccf988f.png" xmlns="">0A6kW8QdlfUe1XHnD446eCQ</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">CheckState</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

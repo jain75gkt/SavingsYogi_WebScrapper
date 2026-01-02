@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="alfPzJh0yU2cjLWrwDLI1Q" Reference="wmoQtc-7M02aRki2x1FIUw/cKSUuaNZm0GSzigR_MCOMQ" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="newtab" CVScreenId="c17107cd-8a9b-45af-bc53-5abb65b7fd0a" CvElementArea="640, 643, 134, 40" CvTextArea="685, 655, 40, 16" CvTextArgument="Save" CvType="Button" DesignTimeRectangle="641, 644, 132, 39" ElementType="Button" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;wnd ctrlid='1' title='&amp;amp;Save' /&gt;" Guid="e4398244-d8bd-43a8-a0ed-996f540c0155" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='#32770' title='Save As' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="1">
+          <Target CVScreenId="c17107cd-8a9b-45af-bc53-5abb65b7fd0a" CvElementArea="790, 643, 134, 41" CvTextArea="829, 654, 52, 18" CvTextArgument="Cancel" CvType="Button" DesignTimeRectangle="791, 644, 132, 39" ElementType="Button" FuzzySelectorArgument="&lt;wnd ctrlid='2' title='Cancel' matching:ctrlid='fuzzy' fuzzylevel:ctrlid='0.0' matching:title='fuzzy' fuzzylevel:title='0.0' check:text='Cancel' /&gt;" Guid="bd8d5fd7-36b9-41c5-a0e5-3f2cd67f1a52" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="1004533df3a1e5e50a8c8baea8ee5706.png" xmlns="">0ld-wWbJRGEe9wqas23jRDg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">Click</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

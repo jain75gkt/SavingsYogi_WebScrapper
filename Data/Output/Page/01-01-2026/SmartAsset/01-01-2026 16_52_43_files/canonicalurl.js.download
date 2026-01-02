@@ -1,0 +1,8 @@
+var head = document.getElementsByTagName('head')[0];
+if (head)
+{
+    var link = document.createElement('link');
+    link.rel = 'canonical';
+    link.href = window.location.origin + window.location.pathname;
+    head.appendChild(link);
+}

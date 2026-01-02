@@ -1,0 +1,54 @@
+body.login-action-login div#login {
+	/* display:none; */
+}
+
+body.login-action-login div#login form#loginform input#user_login {
+	/* display:none; */
+}
+
+
+body.login-action-login div#login form#loginform p.submit input#wp-submit {
+	/* display: none; */
+}
+
+body.login-action-login div#login form#loginform p label[for=user_pass] {
+	display: none;
+}
+
+body.login-action-login div#login form#loginform label[for=user_pass] {
+	display: none;
+}
+
+#loginform>div.user-pass-wrap>div>button {
+	display: none !important;
+}
+
+body.login-action-login div#login p#nav {
+	display: none;
+}
+
+body.login-action-login div#login form#loginform input#user_pass {
+	display: none;
+}
+
+body.login-action-login div#login div#login_error {
+	/* display: none; */
+}
+
+body.login-action-login p.message {
+	/* display: none; */
+}
+
+body.login-action-login div#login #loginform {
+	box-shadow: inherit;
+}
+
+body.login-action-login div#login div#login_error1 {
+	border-left: 4px solid #dd3d36;
+	margin-left: 0;
+	padding: 12px;
+	background: #fff;
+	-webkit-box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.1);
+	box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.1);
+}
+

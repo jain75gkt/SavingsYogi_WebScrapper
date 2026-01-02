@@ -1,0 +1,195 @@
+class $9c5933ee9b412a1b$var$Actions {
+    constructor(config){
+        this.storageItems = {
+            clickId: {
+                key: $9c5933ee9b412a1b$var$Actions.JEENG_IDENTIFIER
+            }
+        };
+        this._config = config;
+        this.retrieveClickId();
+    }
+    push(args) {
+        if (args === undefined) return;
+        args = Array.from(args);
+        const action = args.shift();
+        if (action !== "conversion") throw new Error(`[JEENG SDK] Invalid conversion type: ${action}`);
+        this.submitConversion(args[0]);
+    }
+    fireConversion(props) {
+        this.submitConversion(props);
+    }
+    submitConversion(props) {
+        try {
+            console.info(`[JEENG SDK] conversion event`);
+            const clickId = this.retrieveClickId();
+            const { value: value, currency: currency, action: action } = props || {};
+            const gtmEnabled = !this._config.gtmDisableTracking && typeof window.dataLayer !== "undefined" && !!document.querySelector('script[src*="googletagmanager.com/gtm.js"]');
+            if (!clickId) {
+                console.warn("[JEENG SDK] No click ID is available to report a conversion");
+                return;
+            }
+            const params = Object.assign({
+                origin: "script",
+                pi_companyid: this._config.company.toString(),
+                pi_clickid: clickId,
+                pi_ct: action || "conversion"
+            }, value && currency && {
+                pi_cv: value.toString(),
+                pi_cu: currency
+            });
+            const urlParams = new URLSearchParams(params);
+            const image = new Image();
+            image.src = "https://track.powerinboxedge.com/postback/notify?" + urlParams.toString();
+            if (gtmEnabled) this.triggerGtmEvent(Object.assign({
+                clickId: clickId
+            }, props));
+            console.info(`[JEENG SDK] conversion completed`);
+        } catch (err) {
+            console.error(`[JEENG SDK] conversion failed: ${err}`);
+        }
+    }
+    triggerGtmEvent(details) {
+        var _a;
+        window.dataLayer = window.dataLayer || [];
+        window.dataLayer.push({
+            event: ((_a = this._config) === null || _a === void 0 ? void 0 : _a.gtmEventName) || $9c5933ee9b412a1b$var$Actions.GTM_CONVERSION_IDENTIFIER,
+            details: details
+        });
+    }
+    retrieveValue(itemName, urlParam) {
+        const item = this.storageItems[itemName];
+        const valueFromURL = this.parseUrlParam(window.location.search, urlParam) || this.parseUrlParam(document.referrer, urlParam);
+        if (valueFromURL) {
+            this.storeValue(itemName, valueFromURL);
+            return item.parseValue ? item.parseValue(valueFromURL) : valueFromURL;
+        }
+        return this.loadValue(itemName);
+    }
+    parseUrlParam(url, param) {
+        if (!url) return null;
+        const result = url.match(new RegExp(`[?&]${param}(=([^&#]*)|&|#|$)`, "i"));
+        if (!result || result.length < 2) return null;
+        return decodeURIComponent(result[2].replace(/\+/g, " "));
+    }
+    storeValue(itemName, value) {
+        const item = this.storageItems[itemName];
+        const stringValue = item.formatValue ? item.formatValue(value) : value;
+        window.localStorage.setItem(item.key, stringValue);
+        const expires = new Date(new Date().getTime() + 15552000000).toUTCString();
+        document.cookie = `${item.key}=${encodeURIComponent(stringValue)};path=/;expires=${expires}`;
+    }
+    loadValue(itemName) {
+        const item = this.storageItems[itemName];
+        const cookies = document.cookie.split(/;\s+/);
+        for (const cookie of cookies){
+            const [name, value] = cookie.split("=");
+            if (decodeURIComponent(name) === item.key) {
+                const decodedValue = decodeURIComponent(value);
+                return item.parseValue ? item.parseValue(decodedValue) : decodedValue;
+            }
+        }
+        const value = window.localStorage.getItem(item.key);
+        return item.parseValue ? item.parseValue(value || "") : value;
+    }
+    retrieveClickId() {
+        return this.retrieveValue("clickId", "pi_clickid");
+    }
+}
+$9c5933ee9b412a1b$var$Actions.JEENG_IDENTIFIER = "_jeeng_cid";
+$9c5933ee9b412a1b$var$Actions.GTM_CONVERSION_IDENTIFIER = "jeeng_conversion";
+var $9c5933ee9b412a1b$export$2e2bcd8739ae039 = $9c5933ee9b412a1b$var$Actions;
+
+
+var $f990ce4016376b9f$var$__awaiter = undefined && undefined.__awaiter || function(thisArg, _arguments, P, generator) {
+    function adopt(value) {
+        return value instanceof P ? value : new P(function(resolve) {
+            resolve(value);
+        });
+    }
+    return new (P || (P = Promise))(function(resolve, reject) {
+        function fulfilled(value) {
+            try {
+                step(generator.next(value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function rejected(value) {
+            try {
+                step(generator["throw"](value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function step(result) {
+            result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+        }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+function $f990ce4016376b9f$export$2e2bcd8739ae039() {
+    return $f990ce4016376b9f$var$__awaiter(this, void 0, void 0, function*() {
+        const events = window.jeeng_attribution || [];
+        const initEvent = events.shift();
+        if (!Array.isArray(initEvent) || initEvent.length != 2 || initEvent[0] != "init") throw Error("[JEENG SDK] The Jeeng attribution SDK is not configured correctly");
+        const handler = new (0, $9c5933ee9b412a1b$export$2e2bcd8739ae039)(initEvent[1]);
+        while(events.length > 0)handler.push(events.shift());
+        window.jeeng_attribution.push = handler.push.bind(handler);
+        window.jeeng_attribution.fireConversion = handler.fireConversion.bind(handler);
+    });
+}
+
+
+var $984736f97339e3eb$var$__awaiter = undefined && undefined.__awaiter || function(thisArg, _arguments, P, generator) {
+    function adopt(value) {
+        return value instanceof P ? value : new P(function(resolve) {
+            resolve(value);
+        });
+    }
+    return new (P || (P = Promise))(function(resolve, reject) {
+        function fulfilled(value) {
+            try {
+                step(generator.next(value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function rejected(value) {
+            try {
+                step(generator["throw"](value));
+            } catch (e) {
+                reject(e);
+            }
+        }
+        function step(result) {
+            result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected);
+        }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+function $984736f97339e3eb$var$start() {
+    return $984736f97339e3eb$var$__awaiter(this, void 0, void 0, function*() {
+        window.jeeng_attribution = window.jeeng_attribution || [];
+        window.jeeng_attribution.fireConversion = function(props) {
+            this.push([
+                "conversion",
+                props
+            ]);
+        };
+        const ready = ()=>$984736f97339e3eb$var$__awaiter(this, void 0, void 0, function*() {
+                try {
+                    yield (0, $f990ce4016376b9f$export$2e2bcd8739ae039)();
+                } catch (e) {
+                    console.error(e);
+                }
+            });
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ready, {
+            once: true
+        });
+        else yield ready();
+    });
+}
+$984736f97339e3eb$var$start();
+
+
+//# sourceMappingURL=jeeng-attribution.js.map

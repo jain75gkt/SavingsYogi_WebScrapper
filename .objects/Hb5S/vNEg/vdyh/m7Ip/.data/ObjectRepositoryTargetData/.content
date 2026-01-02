@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="vMwtxpmc9Uupk-LdtTjRhw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="chase.com/content/dam/chase-ux/ratesheets/pdfs/rdtx1.pdf" DesignTimeRectangle="14, 212, 1910, 812" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;wnd aaname='Online CD Savings Accounts &amp;amp; Interest Rates | Capital One' cls='Chrome_RenderWidgetHostHWND' title='Chrome Legacy Window' /&gt;" Guid="9ec6c1f0-b8d0-439a-b977-7c5cd8993092" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='Chrome_WidgetWin_1' title='Online CD Savings Accounts &amp;amp; Interest Rates | Capital One and 1 *' /&gt;" SearchSteps="Selector" SelectionStrategy="UIA" Version="V6" WaitForReadyArgument="Interactive">
+      <imageRef attrName="InformativeScreenshot" originalValue="c57773b8511a39826d62e38ef22a6a61.png" xmlns="">0QgAM-UKd5UCyCH3bvTcsuA</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">InjectJsScript</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

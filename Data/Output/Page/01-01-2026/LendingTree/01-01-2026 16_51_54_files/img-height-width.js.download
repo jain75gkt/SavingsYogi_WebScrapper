@@ -1,0 +1,35 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Use ResizeObserver to avoid forced reflow
+    const resizeObserver = new ResizeObserver((entries) => {
+        entries.forEach((entry) => {
+            const img = entry.target;
+            const { width, height } = entry.contentRect;
+
+            // Round to avoid fractional values
+            const w = Math.round(width);
+            const h = Math.round(height);
+
+            if (!img.hasAttribute('width') && w > 0) {
+                img.setAttribute('width', w);
+            }
+            if (!img.hasAttribute('height') && h > 0) {
+                img.setAttribute('height', h);
+            }
+
+            // Unobserve after setting dimensions to avoid unnecessary callbacks
+            resizeObserver.unobserve(img);
+        });
+    });
+
+    document.querySelectorAll('img').forEach((img) => {
+        if (img.complete && img.naturalWidth > 0) {
+            // Image is already loaded, observe it immediately
+            resizeObserver.observe(img);
+        } else {
+            // Wait for image to load before observing
+            img.addEventListener('load', () => {
+                resizeObserver.observe(img);
+            }, { once: true });
+        }
+    });
+});

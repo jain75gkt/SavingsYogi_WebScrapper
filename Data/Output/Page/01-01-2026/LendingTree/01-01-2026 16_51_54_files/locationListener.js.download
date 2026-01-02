@@ -1,0 +1,17 @@
+!(function () {
+  var t = history.pushState,
+    e = history.replaceState;
+  (history.pushState = function () {
+    t.apply(history, arguments),
+      window.dispatchEvent(new Event('pushstate')),
+      window.dispatchEvent(new Event('locationchange'));
+  }),
+    (history.replaceState = function () {
+      e.apply(history, arguments),
+        window.dispatchEvent(new Event('replacestate')),
+        window.dispatchEvent(new Event('locationchange'));
+    }),
+    window.addEventListener('popstate', function () {
+      window.dispatchEvent(new Event('locationchange'));
+    });
+})();

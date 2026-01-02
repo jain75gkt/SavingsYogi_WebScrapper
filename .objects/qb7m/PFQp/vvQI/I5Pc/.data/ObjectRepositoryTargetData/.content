@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="6hYxG1H8_06A1Gl1V7OqQw" Reference="wmoQtc-7M02aRki2x1FIUw/I5PcndgGuEm1f4mLgm0WyQ" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="discover.com/online-banking/cd" CVScreenId="3a57de88-5e43-41db-b718-e1fbc7ee2b90" CvTextArea="779, 804, 83, 35" CvTextArgument="APY" CvType="Text" DesignTimeRectangle="781, 592, 81, 52" ElementType="Text" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;webctrl idx='5' innertext='APY' /&gt;" Guid="cec83c0d-f6a1-46e1-883a-73648888d4bc" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposit | High Yield CD Rates | Discover' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="4">
+          <Target CVScreenId="3a57de88-5e43-41db-b718-e1fbc7ee2b90" CvTextArea="665, 804, 110, 35" CvTextArgument="3.75%" CvType="Text" DesignTimeRectangle="668, 592, 80, 52" ElementType="Text" FuzzySelectorArgument="&lt;webctrl aaname='3.75' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' parentid='responsive' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' tag='SPAN' type='' class='cd-rate-18-mon' matching:class='fuzzy' fuzzylevel:class='0.0' check:innerText='3.75' /&gt;" Guid="f375937f-2d81-4560-996f-e4c49021f701" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="b98445a7cb9b1f66945371a2a70948a9.png" xmlns="">0UmfSKLPeKUiolqOOae0mIw</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">None</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

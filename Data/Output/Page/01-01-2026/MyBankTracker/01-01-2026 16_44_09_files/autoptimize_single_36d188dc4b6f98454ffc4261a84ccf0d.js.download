@@ -1,0 +1,1 @@
+var Pages={openPage1:function(id){$(id+" #pages").removeClass("page-2-active");$(id+" #pages").removeClass("page-single-active");$(id+" #pages").addClass("page-1-active");},openPage2:function(id){$(id+" #pages").removeClass("page-1-active");$(id+" #pages").addClass("page-2-active");$(id+" #pages").addClass("page-single-active");}};

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="GzDzMFMaxUC58j5dMCJuZQ" Reference="wmoQtc-7M02aRki2x1FIUw/UF7dBNy1j0izzhPX_gM8hw" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="td.com/us/en/personal-banking/certificates-of-deposit" CVScreenId="fd6b7dd9-6c45-47cc-94aa-2acbdf919e8e" CvElementArea="733, 744, 470, 66" CvTextArea="876, 764, 181, 24" CvTextArgument="Set my location" CvType="Button" DesignTimeRectangle="735, 745, 465, 63" ElementType="Button" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl class='cmp-button' parentid='cmp-region-selector-modal' tag='BUTTON' type='button' aaname='                             Set my location                         ' matching:class='fuzzy' fuzzylevel:class='0.0' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:innerText='Set my location' /&gt;" Guid="5fb581d1-92dd-4586-a653-cb234eb64e0c" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposits: View CD Rates &amp;amp; Term Options | TD Bank' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="1">
+          <Target CVScreenId="fd6b7dd9-6c45-47cc-94aa-2acbdf919e8e" CvElementArea="733, 744, 470, 66" CvTextArea="876, 764, 181, 24" CvTextArgument="Set my location" CvType="Button" DesignTimeRectangle="878, 764, 179, 24" ElementType="Text" FuzzySelectorArgument="&lt;webctrl class='cmp-button__text' parentid='cmp-region-selector-modal' tag='SPAN' type='' aaname='Set my location' matching:class='fuzzy' fuzzylevel:class='0.0' matching:parentid='fuzzy' fuzzylevel:parentid='0.0' matching:aaname='fuzzy' fuzzylevel:aaname='0.0' check:innerText='Set my location' /&gt;" Guid="68bd7a32-d20d-4662-8437-8a0e0b69a9d8" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="cacc0fb195e809bf8c99acac8e969ada.png" xmlns="">02TBNNIuV90aUZW6mZJOypg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">KeyboardShortcut</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

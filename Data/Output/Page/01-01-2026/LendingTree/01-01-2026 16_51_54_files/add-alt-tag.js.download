@@ -1,0 +1,9 @@
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("img:not([alt]):not(.excludeAlt), img[alt='']:not(.excludeAlt)").forEach(img => {
+        let src = img.getAttribute("src");
+        if (src) {
+            let filename = src.split("/").pop().split(".")[0].replace(/[-_]/g, " ");
+            img.setAttribute("alt", filename);
+        }
+    });
+});

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="j7snG953HEWzftXDm-MS9g" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="bankrate.com/banking/cds/cd-rates" CVScreenId="9c911a4d-5790-4b43-802a-6e1f001da2da" CvTextArea="1121, 252, 151, 19" CvTextArgument="Run &gt;Command" CvType="Text" DesignTimeRectangle="1123, 248, 772, 30" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;ctrl name='DevTools' role='document' /&gt;&lt;ctrl idx='17' role='grouping' /&gt;" Guid="7c81ec2f-95dd-4566-a238-fc007e275e90" ScopeSelectorArgument="&lt;wnd app='msedge.exe' cls='Chrome_WidgetWin_1' title='Best CD Rates Of January 2026 - Up to 4.20% | Bankrate - [InPriv*' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="None">
+      <imageRef attrName="InformativeScreenshot" originalValue="039f5f27e5af9ab925fe693cc544fd9f.png" xmlns="">0QFZ_flbSaEmEzy9bivQAwg</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">KeyboardShortcut</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="BOpJRmhBEkKG1ZqarAELFA" Reference="wmoQtc-7M02aRki2x1FIUw/YsllUf_RFkKGO3j3veMluQ" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="chase.com/personal/savings/bank-cd" CVScreenId="d719c0da-9cb5-4c11-8791-db4195216506" CvElementArea="693, 535, 111, 33" CvTextArea="733, 545, 32, 13" CvTextArgument="Save" CvType="Button" DesignTimeRectangle="695, 537, 110, 33" ElementType="Button" ElementVisibilityArgument="Interactive" FullSelectorArgument="&lt;wnd ctrlid='1' title='&amp;amp;Save' /&gt;" Guid="049d248e-db76-4439-a4d5-8985b195bcc4" ScopeSelectorArgument="&lt;wnd app='chrome.exe' cls='#32770' title='Save As' /&gt;" SearchSteps="Selector, CV" Version="V6" WaitForReadyArgument="Interactive">
+      <TargetAnchorable.Anchors>
+        <scg:List x:TypeArguments="ITarget" Capacity="1">
+          <Target CVScreenId="d719c0da-9cb5-4c11-8791-db4195216506" CvElementArea="818, 535, 111, 34" CvTextArea="851, 545, 45, 15" CvTextArgument="Cancel" CvType="Button" DesignTimeRectangle="820, 537, 110, 33" ElementType="Button" FuzzySelectorArgument="&lt;wnd ctrlid='2' title='Cancel' matching:ctrlid='fuzzy' fuzzylevel:ctrlid='0.0' matching:title='fuzzy' fuzzylevel:title='0.0' check:text='Cancel' /&gt;" Guid="3e27dd32-5ea7-4efa-9098-9bedfcc07ebc" SearchSteps="FuzzySelector, CV" />
+        </scg:List>
+      </TargetAnchorable.Anchors>
+      <imageRef attrName="InformativeScreenshot" originalValue="a664071b7670770b01f5a68e2c70edb3.png" xmlns="">0wyjDfyiXLEWyOPJUAszZmw</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">None</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

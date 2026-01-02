@@ -1,0 +1,1 @@
+$(document).ready(function(){$('#fillerlist .toggle').click(function(){$(this).remove();});$('.show_offers').click(function(){if($(".hideBox").length>0){$('.hideBox').slice(0).removeClass('hideBox d-none');$('.show_offers').hide();return;}else{$('.show_offers').hide();return;}});});

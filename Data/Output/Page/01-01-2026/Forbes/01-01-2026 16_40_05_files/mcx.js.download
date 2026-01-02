@@ -1,0 +1,1 @@
+window.advBidxc.contextualcallback({"status":"OK","code":200,"notify_object":{"nid":"L8R0Af_Zt3zi","ttl":120},"data":{"category":{"taxo":"IAB-2.0","ids":[391,392],"name":"Personal Finance > Consumer Banking"},"segments":[{"key":"iab_consumer_banking"},{"key":"iab_personal_finance"}],"bsst":"unknown_safe","brand-safety":{"status":1999,"values":[]}}});

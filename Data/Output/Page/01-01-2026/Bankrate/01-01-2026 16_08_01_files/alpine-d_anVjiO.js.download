@@ -1,0 +1,1 @@
+import{m as d}from"./module.esm-B7OnGcQ6.js";window.Alpine=d;window.addEventListener("DOMContentLoaded",e=>{window.Alpine.start()});

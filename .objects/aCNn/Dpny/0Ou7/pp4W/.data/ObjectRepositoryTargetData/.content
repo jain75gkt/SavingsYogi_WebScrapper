@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-16"?>
+<ObjectRepositoryTargetData ContentHash="5XvkrA3TDE2QNnJ54CYrIA" Reference="wmoQtc-7M02aRki2x1FIUw/pp4WE3f1EkGVp90C4uJStQ" xmlns="http://schemas.uipath.com/workflow/activities/uix" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ObjectRepositoryTargetData.Data>
+    <TargetAnchorable x:Key="TargetAnchorable" BrowserURL="discover.com/online-banking/cd" CVScreenId="9a295b4a-48c7-43f4-8634-dc0201a80a48" CvElementArea="516, 514, 428, 63" CvType="InputBox" DesignTimeRectangle="519, 515, 425, 60" ElementType="InputBox" ElementVisibilityArgument="Interactive" FuzzySelectorArgument="&lt;webctrl tag='INPUT' maxlength='5' /&gt;" Guid="7d5dffe0-6e68-4fb7-95af-2734f2835c80" ScopeSelectorArgument="&lt;html app='msedge.exe' title='Certificate of Deposit | Open a CD Account Online | Citi.com' /&gt;" SearchSteps="FuzzySelector, CV" Version="V6" WaitForReadyArgument="[UiPath.UIAutomationNext.Enums.NWaitForReady.Interactive]">
+      <imageRef attrName="InformativeScreenshot" originalValue="1271a7409a678fdd7cf5d232ec380ad3.png" xmlns="">0WB20lWCcKk6Sz-2uQZjH8Q</imageRef>
+    </TargetAnchorable>
+    <x:String x:Key="ActivityType">TypeInto</x:String>
+  </ObjectRepositoryTargetData.Data>
+</ObjectRepositoryTargetData>

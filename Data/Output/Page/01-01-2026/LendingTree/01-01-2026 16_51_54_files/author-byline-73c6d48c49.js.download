@@ -1,0 +1,1 @@
+$(document).ready((function(){$(document).on("click",".plus-more-mobile,.collapse-mobile",(function(){$(".writer-header-wrapper.multiple").toggle(),$(".editor-header-wrapper.multiple").toggle(),$(".collapse-mobile").toggle(),$(".plus-more-mobile").toggle(),$(".writer-editor-block").toggleClass("open")}))}));

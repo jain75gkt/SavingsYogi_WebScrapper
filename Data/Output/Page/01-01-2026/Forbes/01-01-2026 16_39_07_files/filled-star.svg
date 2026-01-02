@@ -1,0 +1,16 @@
+<svg width="13" height="14" viewBox="0 0 13 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="filled-star.svg">
+<g id="Clip path group">
+<mask id="mask0_668_1493" style="mask-type:luminance" maskUnits="userSpaceOnUse" x="0" y="1" width="12" height="12">
+<g id="a">
+<path id="Vector" d="M11.9187 1.41528H0.700195V12.6338H11.9187V1.41528Z" fill="white"/>
+</g>
+</mask>
+<g mask="url(#mask0_668_1493)">
+<g id="Group">
+<path id="Vector_2" d="M6.30964 2.34985L7.75403 5.27602L10.984 5.74813L8.64683 8.02456L9.19841 11.2405L6.30964 9.72137L3.42086 11.2405L3.97245 8.02456L1.63525 5.74813L4.86525 5.27602L6.30964 2.34985Z" fill="#FFB136" stroke="#FFB136" stroke-width="0.955712" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+</g>
+</svg>

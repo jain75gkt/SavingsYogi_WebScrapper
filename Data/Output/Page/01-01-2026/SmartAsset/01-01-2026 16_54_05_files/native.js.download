@@ -1,0 +1,87 @@
+function loadScript(url, callback)
+{
+
+    var script = document.createElement("script")
+    script.type = "text/javascript";
+
+    if (script.readyState)
+    {  //IE
+        script.onreadystatechange = function ()
+        {
+            if (script.readyState == "loaded" ||
+                script.readyState == "complete")
+            {
+                script.onreadystatechange = null;
+                callback();
+            }
+        };
+    }
+    else
+    {  //Others
+        script.onload = function ()
+        {
+            callback();
+        };
+    }
+
+    script.src = url;
+    document.getElementsByTagName("head")[0].appendChild(script);
+}
+
+var LAST_SIZE = -1;
+
+function resizeMsg()
+{
+    if (AD_ID != "")
+    {
+        var body = document.body,
+            html = document.documentElement;
+
+        var height = Math.max(body.scrollHeight, body.offsetHeight,
+            html.clientHeight, html.scrollHeight, html.offsetHeight);
+
+        //
+        // only send size if different to "last size" sent
+        //
+        if (height != LAST_SIZE)
+        {
+            parent.postMessage("NFX:Resize:" + AD_ID + ":" + height, "*");
+            LAST_SIZE = height;
+        }
+    }
+}
+
+window.addEventListener("message", receiveMessage, false);
+
+function receiveMessage(event)
+{
+    if (event.data.indexOf("NFX:") == 0)
+    {
+        //console.log("insideAd", event);
+        if (event.data.indexOf("NFX:Identify:") == 0)
+        {
+            AD_ID = event.data.substr(13);
+            console.log("Setting AD_ID: ", AD_ID);
+            resizeMsg();
+        }
+    }
+}
+
+var AD_ID = "";
+
+// send initial "loaded" event
+parent.postMessage("NFX:Loaded", "*");
+
+// handle window resize events
+window.onresize = function()
+{
+    resizeMsg();
+};
+
+// listen for DOM modification events
+document.addEventListener("DOMNodeInserted", resizeMsg);
+document.addEventListener("DOMNodeRemoved", resizeMsg);
+document.addEventListener("DOMSubtreeModified", resizeMsg);
+document.addEventListener("DOMContentLoaded", resizeMsg);
+
+

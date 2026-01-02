@@ -1,0 +1,21 @@
+<!--?xml version="1.0" encoding="UTF-8"?-->
+<svg width="50px" height="35px" viewBox="0 0 50 35" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
+    <title>Credit Card 2</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Best-Savings" transform="translate(-675.000000, -444.000000)">
+            <g id="Group-12" transform="translate(609.000000, 381.000000)">
+                <g id="Credit-Card-2" transform="translate(66.000000, 63.000000)">
+                    <path d="M41.2057,33.8876 L8.2057,33.8876 C4.0637,33.8876 0.7057,30.5296 0.7057,26.3876 L0.7057,2.3876 C0.7057,1.5586 1.3777,0.8876 2.2057,0.8876 L47.2057,0.8876 C48.0337,0.8876 48.7057,1.5586 48.7057,2.3876 L48.7057,26.3876 C48.7057,30.5296 45.3477,33.8876 41.2057,33.8876 Z" id="Stroke-754" stroke="#000000" stroke-linecap="round"></path>
+                    <rect id="Rectangle-5" fill="#AEE6CE" x="2" y="7" width="46" height="6"></rect>
+                    <path d="M48.7058,12.8874 L0.7058,12.8874" id="Stroke-755" stroke="#000000"></path>
+                    <path d="M0.7058,6.8874 L48.7058,6.8874" id="Stroke-756" stroke="#000000"></path>
+                    <path d="M7.2057,21.5622 L19.2057,21.5622" id="Stroke-757" stroke="#000000" stroke-linecap="round"></path>
+                    <path d="M7.2057,26.0622 L25.2057,26.0622" id="Stroke-758" stroke="#000000" stroke-linecap="round"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

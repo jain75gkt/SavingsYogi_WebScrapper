@@ -1,0 +1,6 @@
+{
+  "Name": "SavingsYogi",
+  "ProjectType": "Process",
+  "Description": "Robotic Enterprise Framework of savings yogi internship project",
+  "MainFile": "Main.xaml"
+}
